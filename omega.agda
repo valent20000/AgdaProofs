@@ -83,11 +83,14 @@ module omega where
   lInit {A} {b} {c} {r} {s} β = λ i → pathJprop ((lPType r s)) lBaseCase i
   
 
+  -- ⋆g is a more general operator, not ⋆ wich is only in Ω.
+  
+  infix 8 _⋆g_
   infix 8 _⋆_
   
-  _⋆_ : {A : Set} {a : A} {b : A} {c : A} {p q : (a ≡ b)} {r s : (b ≡ c)} (α : (p ≡ q)) (β : (r ≡ s)) → (trans p r) ≡ (trans q s)
+  _⋆g_ : {A : Set} {a : A} {b : A} {c : A} {p q : (a ≡ b)} {r s : (b ≡ c)} (α : (p ≡ q)) (β : (r ≡ s)) → (trans p r) ≡ (trans q s)
 
-  _⋆_ {A} {a} {b} {c} {p} {q} {r} {s} α β = trans (α ·ᵣ r) (q ·ₗ β)
+  _⋆g_ {A} {a} {b} {c} {p} {q} {r} {s} α β = trans (α ·ᵣ r) (q ·ₗ β)
 
   lemma1 : {A : Set} (a : A) → trans (λ _ → a) (λ _ → a) ≡ (λ _ → a)
   lemma1 a = trans-id-l refl
@@ -120,25 +123,28 @@ module omega where
   --starOnLoop : {A : Set} → {a : A} → (α β : (Ω² A a)) → PathP (λ i → (lemma2 a i)) (α ⋆ β) (trans α β)
 
   -- The problem is we want to use a simpler syntax for proof, that works only for homogeneous path. So we're going t have to stay with transport.
+  
+  p = λ a → (λ i → lemma2 a i)
+
+  module _ {A : Set} {a : A} (α β : (Ω² A a)) where
+
+    _⋆_ : (Ω² A a)
+    _⋆_ = transp (p a) (α ⋆g β)
 
   module _ (A : Set) (a : A) (α β : (Ω² A a)) where
 
     -- We thus define obj wich is what we want to study
-    
-    p = (λ i → lemma2 a i) 
-
-    obj : (λ _ → a) ≡ (λ _ → a)
-    obj = (transp p (α ⋆ β))
+    pt = (p a)
 
     infix 3 _∙_
     _∙_ : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
     a ∙ b = trans a b
 
     -- ? ≡⟨ ? ⟩ ?
-    starOnLoop : obj ≡ (α ∙ β)
+    starOnLoop : (α ⋆ β) ≡ (α ∙ β)
     starOnLoop = begin
-      obj ≡⟨ cong (transp p) (begin -- We do equalities under the transportation
-          α ⋆ β ≡⟨⟩ --Definitional equality
+      (α ⋆ β) ≡⟨ cong (transp pt) (begin -- We do equalities under the transportation
+          α ⋆g β ≡⟨⟩ --Definitional equality
          (α ·ᵣ refl) ∙ (refl ·ₗ β) ≡⟨ cong (λ x → trans x _) (rInit α) ⟩
          (rBaseCase) ∙ (refl ·ₗ β) ≡⟨  cong ((λ x → trans _ x)) ((lInit β)) ⟩
          (rBaseCase) ∙ (lBaseCase) ≡⟨⟩
@@ -147,8 +153,9 @@ module omega where
          -- We would like to say (ru (refl {x = a})) ≡ refl {x = refl {x = a}}
          -- They unfortunately aren't of the same types : (λ _ → a) ≡ trans (λ _ → a) refl || (λ _ → a) ≡ (λ _ → 
         )⟩
-      transp p {!!} ≡⟨ {!!} ⟩
-      {!!}
+      {!((sym (ru refl) ∙ (α ∙ (ru refl))) ∙ ((sym (lu refl)) ∙ (β ∙(lu refl))))!} ≡⟨ {!!} ⟩
+      {!!} ≡⟨ {!!} ⟩
+      (α ∙ β)∎
 
 {-- 
  obj ≡⟨ cong (transp p) (begin 
@@ -163,3 +170,23 @@ module omega where
   -- comm : {A : Set} → {a : A} → ( α β : (Ω² A a)) → (trans α β) ≡ (trans β α)
   -- comm = 
   
+{--
+
+    -- ? ≡⟨ ? ⟩ ?
+    starOnLoop : (α ⋆ β) ≡ (α ∙ β)
+    starOnLoop = begin
+      (α ⋆ β) ≡⟨ cong (transp p) (begin -- We do equalities under the transportation
+          α ⋆ β ≡⟨⟩ --Definitional equality
+         (α ·ᵣ refl) ∙ (refl ·ₗ β) ≡⟨ cong (λ x → trans x _) (rInit α) ⟩
+         (rBaseCase) ∙ (refl ·ₗ β) ≡⟨  cong ((λ x → trans _ x)) ((lInit β)) ⟩
+         (rBaseCase) ∙ (lBaseCase) ≡⟨⟩
+         ((sym (ru refl) ∙ (α ∙ (ru refl))) ∙ ((sym (lu refl)) ∙ (β ∙(lu refl))))∎
+         
+         -- We would like to say (ru (refl {x = a})) ≡ refl {x = refl {x = a}}
+         -- They unfortunately aren't of the same types : (λ _ → a) ≡ trans (λ _ → a) refl || (λ _ → a) ≡ (λ _ → 
+        )⟩
+      transp p (((sym (ru refl) ∙ (α ∙ (ru refl))) ∙ ((sym (lu refl)) ∙ (β ∙(lu refl))))) ≡⟨ {!α ⋆ β!} ⟩
+      {!!} ≡⟨ {!!} ⟩
+      (α ∙ β) ∎
+
+--}
