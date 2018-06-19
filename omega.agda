@@ -18,8 +18,11 @@ module omega where
   infix 9 _·ₗ_
 
   -- The sym part is to stay consistent with Hott's notations
-  ru : {A : Set} → {x y : A} → (p : x ≡ y) → p ≡ trans p (\ i → y)
+  ru : {A : Set} → {x y : A} → (p : x ≡ y) → p ≡ trans p refl
   ru p = sym (trans-id p)
+
+  --ruBase : {A : Set} {a : A} → (ru (refl {x = a})) ≡ refl {x = refl {x = a}}
+  --ruBase = ?
 
   rBaseCase : {A : Set} → {a b : A} → {p q : (a ≡ b)} → {α : (p ≡ q)} → (trans p refl) ≡ (trans q refl)
   rBaseCase {A} {a} {b} {p} {q} {α} = (trans (sym (ru p)) (trans α (ru q)))
@@ -57,7 +60,7 @@ module omega where
 --}
 
 
-  lu : {A : Set} → {x y : A} → (p : x ≡ y) → p ≡ trans (\ i → x) p
+  lu : {A : Set} → {x y : A} → (p : x ≡ y) → p ≡ trans refl p
   lu p = sym (trans-id-l p)
 
   lBaseCase : {A : Set} {b c : A} {r s : (b ≡ c)} {β : (r ≡ s)} → (trans refl r) ≡ (trans refl s)
@@ -127,21 +130,24 @@ module omega where
     obj : (λ _ → a) ≡ (λ _ → a)
     obj = (transp p (α ⋆ β))
 
+    infix 3 _∙_
+    _∙_ : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+    a ∙ b = trans a b
+
     -- ? ≡⟨ ? ⟩ ?
-    starOnLoop :  obj ≡ (trans α β)
+    starOnLoop : obj ≡ (α ∙ β)
     starOnLoop = begin
       obj ≡⟨ cong (transp p) (begin -- We do equalities under the transportation
           α ⋆ β ≡⟨⟩ --Definitional equality
-          trans (α ·ᵣ refl) (refl ·ₗ β) ≡⟨ cong (λ x → trans x _) (rInit α) ⟩
-          trans (rBaseCase) (refl ·ₗ β) ≡⟨  cong ((λ x → trans _ x)) ((lInit β)) ⟩
-          trans (rBaseCase) (lBaseCase) ≡⟨⟩
-          trans ((trans (sym (ru refl)) (trans α (ru refl)))) (((trans (sym (lu refl)) (trans β (lu refl))))) ≡⟨ {!!} ⟩
-          {!!} ≡⟨ {!!} ⟩
-          {!!} ≡⟨ {!!} ⟩
-          {!!}
-        )
-       ⟩
-      transp _ _ ≡⟨ {!!} ⟩
+         (α ·ᵣ refl) ∙ (refl ·ₗ β) ≡⟨ cong (λ x → trans x _) (rInit α) ⟩
+         (rBaseCase) ∙ (refl ·ₗ β) ≡⟨  cong ((λ x → trans _ x)) ((lInit β)) ⟩
+         (rBaseCase) ∙ (lBaseCase) ≡⟨⟩
+         ((sym (ru refl) ∙ (α ∙ (ru refl))) ∙ ((sym (lu refl)) ∙ (β ∙(lu refl))))∎
+         
+         -- We would like to say (ru (refl {x = a})) ≡ refl {x = refl {x = a}}
+         -- They unfortunately aren't of the same types : (λ _ → a) ≡ trans (λ _ → a) refl || (λ _ → a) ≡ (λ _ → 
+        )⟩
+      transp p {!!} ≡⟨ {!!} ⟩
       {!!}
 
 {-- 
