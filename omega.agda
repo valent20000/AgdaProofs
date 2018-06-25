@@ -20,14 +20,14 @@ module omega where
 
   lemmaA : {A : Set} {a : A} → transp (λ i → sym (λ i₁ → a) i ≡ a) (λ i → a) ≡ refl {x = a}
   lemmaA {A} {a} = begin
-    transp (λ i → sym (λ i₁ → a) i ≡ a) (λ i → a) ≡⟨ cong (λ x → transp (λ i → sym x i ≡ a) _) refl ⟩
+    transp (λ i → sym (λ i₁ → a) i ≡ a) (λ i → a) ≡⟨⟩
     transp (λ i → refl i ≡ a) (λ i → a) ≡⟨⟩
     transp (λ i → a ≡ a) (λ i → a) ≡⟨ trans-id refl ⟩
     (refl ∎)
 
   lemmaB : {A : Set} {a : A} → trans (λ i → a) (trans (λ i → a) (λ i → a)) ≡ refl
   lemmaB {A} {a} = begin
-    trans (λ i → a) (trans (λ i → a) (λ i → a)) ≡⟨ cong (λ x → trans _ x) ((trans-id refl)) ⟩
+    trans (λ i → a) (trans (λ i → a) (λ i → a)) ≡⟨ cong (λ x → trans (λ i → a) x) ((trans-id refl)) ⟩
     trans (λ i → a) (λ i → a) ≡⟨ trans-id refl ⟩
     refl
 
