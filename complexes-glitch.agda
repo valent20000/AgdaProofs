@@ -18,9 +18,6 @@ module complexes where
   open import Cat.Prelude --hiding (_×_) --using
   ------- We first prove (ℤ, 0) ≡ (ℤ, i) for every i ∈ ℤ
 
-  eqTr : {A : Set} {a b : A} (p : a ≡b b) → a ≡ b
-  eqTr reflb = refl
-
   -- Taken from Cubical.Examples.Int
   -- Adapted to work with the stdlib.
 
@@ -132,6 +129,9 @@ module complexes where
   whoZero : {i : ℤ} → transp (λ j → (iPathℤ i)j) (pos 0) ≡ i
   whoZero {pos n} = whoZeroN
   whoZero {(negsuc n)} = LemmaNeg
+
+  eqTr : {A : Set} {a b : A} (p : a ≡b b) → a ≡ b
+  eqTr reflb = ?
 
   whoIsWho : {i p : ℤ} → transp (λ j → (iPathℤ i)j) p ≡ (i + p)
   whoIsWho {i} {(pos 0)} = trans whoZero {!(+-identityʳ i)!} 
