@@ -8,7 +8,7 @@ module complexes where
 
   open import Data.Integer.Base renaming (suc to sucℤ) renaming (pred to predℤ) hiding (_⊔_)
   open import Data.Integer.Properties
-  open import Data.Nat.Base hiding (_⊔_) hiding (_+_)
+  open import Data.Nat.Base hiding (_⊔_) hiding (_+_) hiding (_^_)
   open import Agda.Builtin.Int
 
   --open import Cubical.FromStdLib
@@ -19,20 +19,17 @@ module complexes where
   open import Cat.Prelude --hiding (_×_) --using
 
   open import Numbers
+  open import Utils hiding (_<|_)
 
   --- We define what a chain complex is.
   {-- In idea :
-
     Convention: (chain i) is the ith object and the ith Arrow.
-
     chain : {c : Category} → ℤ → (c.Object, c.Arrow)
     
     With the constraint :
       - hasZero :
         ∃ 0 ∈ c.ArrowObject | (IsInitial 0) /\ (IsTerminal 0)
-
       ie we want a pointed Category
-
       - isChain:
         ∀ i ∈ ℤ; (chain i) ∙ (chain (i+1)) = 0 (arrow)   
   --}
@@ -75,11 +72,8 @@ module complexes where
   {--
     
     Now we are going to define a certain type of chain complexes;
-
     .. ← 0 ← .. ← 0 ← A ← 0 ← .. ← 0 ← ..
-
     With A in the i ∈ ℤ position.
-
   --}
   
   -- We now assume we have a ZeroCategory
@@ -158,6 +152,14 @@ module complexes where
       thisAi :  (p : ℤ) → Arrow (thisOi p) (thisOi (predℤ p))
       thisAi p = (zeroFunc (thisOi p) (thisOi (predℤ p)))
 
+      LmCheck1 : (thisOi i) ≡ A
+      LmCheck1 = begin
+        thisOi i ≡⟨ ElimCompL 1 (thisO (primComp (λ j → iPathℤ i (~ j)) i0 (λ i₁ → empty) i)) ⟩
+        (thisO (primComp (λ j → iPathℤ i (~ j)) i0 (λ i₁ → empty) i)) ≡⟨ sym (LmExchgPath _ _ _ (whoZero {i = i})) <| cong (λ e → thisO e) ⟩
+        thisO (pos 0) ≡⟨⟩
+        A ∎
+
+
       --Looking at the normal forms sure is useful sometimes :)
       
       LemmaTrans : (p : ℤ)  → (thisOi p) ≡ thisO (transp (λ j → (sym (iPathℤ i)) j) p)
@@ -199,7 +201,8 @@ module complexes where
          (thisO (predℤ (predℤ v))),
          ((zeroFunc (thisO (predℤ v)) (thisO (predℤ (predℤ v)))) <<< (zeroFunc (thisO v) (thisO (predℤ v))))
 
-          ≡⟨ (let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; C = cong (λ x → predℤ x) A ; Q : PathP _ _ _ ; Q = trans B C in Σ≡ refl λ j → ( thisO (Q (~ j))) , (zeroFunc (thisO (A (~ j))) (thisO (Q (~ j)))) <<< (zeroFunc (thisO v) (thisO (A (~ j))))) ⟩
+          ≡⟨ (let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; C = cong (λ x → predℤ x) A ; Q : PathP _ _ _ ; Q = trans B C
+              in Σ≡ refl λ j → ( thisO (Q (~ j))) , (zeroFunc (thisO (A (~ j))) (thisO (Q (~ j)))) <<< (zeroFunc (thisO v) (thisO (A (~ j))))) ⟩
 
 
           (thisO v),
@@ -217,18 +220,110 @@ module complexes where
 
         ((thisOi p), (thisOi (predℤ (predℤ p))),  (thisAi (predℤ p)) <<< (thisAi p))∎))
 
+      LemmaProj1' : (p : ℤ) → cong-d fst (isChainG p)
+                            ≡ sym
+                              (trans (LemmaTrans p)
+                              (trans refl
+                              (trans refl
+                              (trans refl
+                              (trans (sym (LemmaTrans p))
+                                     refl)))))
+      LemmaProj1' p = refl
 
       -- The proofs we did are based on the umbrella principle (Things like P M P^-1 in linear algebra); So of course the two first paths are equal to refl.
       LemmaProj1 : (p : ℤ) → cong-d fst (isChainG p) ≡ refl
-      LemmaProj1 p = {!!}
+      LemmaProj1 p = begin
+        sym
+                              (trans (LemmaTrans p)
+                              (trans refl
+                              (trans refl
+                              (trans refl
+                              (trans (sym (LemmaTrans p))
+                                     refl))))) ≡⟨ LemmaIt 3 (λ x → trans refl x) (trans-id-l (trans (sym (LemmaTrans p)) refl)) <| cong (λ e → sym(trans (LemmaTrans p) e) ) ⟩
+        sym(trans (LemmaTrans p) (trans (sym (LemmaTrans p)) refl)) ≡⟨ trans-id (sym(LemmaTrans p)) <| cong (λ x → sym(trans (LemmaTrans p) x)) ⟩
+        sym(trans (LemmaTrans p) (sym (LemmaTrans p))) ≡⟨ LmTransSym _ (LemmaTrans p) <| cong (λ x → sym x) ⟩
+        refl ∎
 
+
+      LemmaProj2' : (p : ℤ) → cong-d (\ x → x .snd .fst) (isChainG p)
+                            ≡ sym (trans (LemmaTrans (predℤ (predℤ p)))
+                                  (trans (let A = LemmaPredTransp {i = i} {p = p}
+                                              B = LemmaPredTransp {i = i} {p = predℤ p}
+                                          in -- not definitionally the same as "cong thisO (trans B (cong predℤ A))"
+                                             trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A)
+                                          )
+                                  (trans refl
+                                  (trans (let A = LemmaPredTransp {i = i} {p = p}
+                                              B = LemmaPredTransp {i = i} {p = predℤ p}
+                                           in sym (cong thisO (trans B (cong predℤ A))))
+                                  (trans (sym (LemmaTrans (predℤ (predℤ p))))
+                                    refl)))))
+      LemmaProj2' p = refl
+
+      --LemmaCongTrans : {A B : Set} {x : A} (f : A → B) (y : A) (a : x ≡ y) (z : A) (b : y ≡ z) → cong f (trans a b) ≡ trans (cong f a) (cong f b)
+      --LemmaCongTrans f = pathJ _ (pathJ _ (begin
+        --{!!}))
+
+      LemmaInLine' : (p : ℤ) → let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} in (sym (cong thisO (trans B (cong predℤ A)))) ≡ (trans (sym (cong (\ i → thisO (predℤ i)) A)) (sym (cong thisO B)) )
+
+      LemmaInLine' p = begin
+        let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; cb = (cong thisO B) ; ca = (cong (\ i → thisO (predℤ i)) A) in
+        
+        (sym (cong thisO (trans B (cong predℤ A)))) ≡⟨⟩
+        sym (cong thisO (trans B (cong predℤ A))) ≡⟨ sym (trans-cong thisO B _ (cong predℤ A)) <| cong (λ x → sym x) ⟩
+        sym (trans cb (cong thisO (cong predℤ A))) ≡⟨ (LmCongCong thisO predℤ _ A) <| cong (λ x → sym(trans (cong thisO B) x) ) ⟩
+        sym (trans cb ca) ≡⟨ (symOnTransL _ cb _ ca) ⟩
+        (trans (sym ca) (sym cb))∎
+
+
+      LemmaInLine : (p : ℤ) → let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} in trans (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A)) (sym (cong thisO (trans B (cong predℤ A)))) ≡ refl
+
+
+      --Proof worked and then agda couldn't parse it anymore...
+      LemmaInLine p = begin
+        let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; cb = (cong thisO B) ; ca = (cong (\ i → thisO (predℤ i)) A) in
+        trans (trans cb ca) (sym (cong thisO (trans B (cong predℤ A)))) ≡⟨ LemmaInLine' p <| cong (λ X → trans (trans cb ca) X)  ⟩
+        trans (trans cb ca) (trans (sym ca) (sym cb)) ≡⟨  trans-assoc {p = (trans cb ca)} {q = (sym ca)} {r = (sym cb)} ⟩
+        trans (trans (trans cb ca) (sym ca)) (sym cb) ≡⟨  sym( trans-assoc {p = cb} {q = ca} {r = (sym ca)}) <| cong (λ x → trans x (sym cb))  ⟩
+        trans (trans cb (trans ca (sym ca))) (sym cb) ≡⟨ LmTransSym _ ca <| cong (λ x → trans (trans cb x) (sym cb)) ⟩
+        trans (trans cb refl) (sym cb) ≡⟨ trans-id cb <| cong (λ x → trans x (sym cb)) ⟩
+        trans cb (sym cb) ≡⟨ LmTransSym _ cb ⟩
+        refl ∎
+        
       LemmaProj2 : (p : ℤ) → cong-d (λ a → fst (snd a)) (isChainG p) ≡ refl
-      LemmaProj2 p = {!!}
+      LemmaProj2 p = begin
+        (let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} in
+        let c1 = λ X → sym (trans (LemmaTrans (predℤ (predℤ p)))
+                                  (trans (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A))
+                                  X)) ; e1 =
+                                  (trans (sym (cong thisO (trans B (cong predℤ A))))
+                                  (trans (sym (LemmaTrans (predℤ (predℤ p))))
+                                    refl)) in c1 (trans refl e1) ≡⟨ (trans-id-l e1) <| cong c1 ⟩
+                                    
+        let e2 = λ (X : thisO (transp (λ j → sym (iPathℤ i) j) (predℤ (predℤ p))) ≡ thisOi (predℤ (predℤ p))) → (trans (sym (cong thisO (trans B (cong predℤ A)))) X) in
+        c1 (e2 (trans (sym (LemmaTrans (predℤ (predℤ p))))
+                                    refl)) ≡⟨ trans-id (sym (LemmaTrans (predℤ (predℤ p)))) <| cong (λ X → c1 (e2 X)) ⟩ 
+                                    
+       let a = (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A)) ; b = (sym (cong thisO (trans B (cong predℤ A)))) ; c = (sym (LemmaTrans (predℤ (predℤ p)))) in
+       sym (trans (LemmaTrans (predℤ (predℤ p))) (trans a (trans b c)) ) ≡⟨ trans-assoc {p = a} {q = b} {r = c} <| cong (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) X) ) ⟩
+                                          
+        sym (trans (LemmaTrans (predℤ (predℤ p)))
+                                  (trans (trans (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A))
+                                         (sym (cong thisO (trans B (cong predℤ A)))))
+                                          (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ (LemmaInLine p) <| cong (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) (trans X (sym (LemmaTrans (predℤ (predℤ p)))) )))  ⟩
+                                          
+        sym (trans (LemmaTrans (predℤ (predℤ p)))
+                   (trans refl (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ trans-id-l (sym (LemmaTrans (predℤ (predℤ p)))) <| cong (λ x → sym (trans (LemmaTrans (predℤ (predℤ p))) x)) ⟩
+                   
+        sym ( trans (LemmaTrans (predℤ (predℤ p))) (sym (LemmaTrans (predℤ (predℤ p)))) ) ≡⟨  LmTransSym _ (LemmaTrans (predℤ(predℤ p))) <| cong (λ x → sym x) ⟩
+        refl ∎)
 
       isChain : (p : ℤ) → (thisAi (predℤ p)) <<< (thisAi p) ≡ zeroFunc (thisOi p) (thisOi (predℤ (predℤ p)))
-      isChain p =  let r = cong-d (λ a → snd (snd a)) (isChainG p) ; A = λ j → (Arrow (LemmaProj1 p j) (thisOi (predℤ (predℤ p)))) ; B = λ j → (Arrow (thisOi p) (LemmaProj2 p j)) in
-        λ j → {!r!}
-
+      isChain p = transp (\ j → PathP (\ i → Arrow (LemmaProj1 p j i) (LemmaProj2 p j i)) lhs rhs) (cong-d (λ a → snd (snd a)) (isChainG p))
+         where
+           lhs = (thisAi (predℤ p)) <<< (thisAi p)
+           rhs = zeroFunc (thisOi p) (thisOi (predℤ (predℤ p)))
+           
       -- Main theorem.
       
       baseChain : (ChainComplex ℓa ℓb {cat = cat})

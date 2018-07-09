@@ -18,6 +18,8 @@ module Numbers where
   open import Cat.Category
   open import Cat.Prelude --hiding (_×_) --using
 
+  open import Utils hiding (_<|_)
+
   ------- We first prove (ℤ, 0) ≡ (ℤ, i) for every i ∈ ℤ
 
   -- This lemma transforms equality from the standard library to Cubical equalities.
@@ -67,15 +69,6 @@ module Numbers where
   iPathℤ (pos n) = (nPathℤ n)
   iPathℤ (negsuc n) = sym (nPathℤ (suc n))
 
-  transpOfTrans : {A : Set} {a : A} (B : Set) (p : A ≡ B) (C : Set) (q : B ≡ C) → (transp (λ j → (trans p q) j) a) ≡ (transp (λ j → q j) (transp (λ j → p j) a))
-  transpOfTrans {A} {a} = pathJ _ (pathJ _ --Par induction sur p et q.
-    (begin
-      transp (λ j → trans (λ i → A) (λ i → A) j) a ≡⟨ (trans-id refl) <| (cong (λ x → transp (λ j → x j) a)) ⟩
-      transp (λ j → A) a                           ≡⟨ (transp-refl a) ⟩ 
-      a                                            ≡⟨ sym (transp-refl a) ⟩
-      (transp (λ j → refl j) a)                    ≡⟨ sym (transp-refl (transp (λ j → refl j) a)) ⟩
-      (transp (λ j → refl j) (transp (λ j → refl {x = A} j) a)) ∎))
-
 
   LemmaT : (n : ℕ) → primComp (λ i → ℕ) i0 (λ i → empty) (primComp (λ i → ℕ) i0 (λ i → empty) (primComp (λ i → ℕ) i0 (λ i → empty) n)) ≡ n
   LemmaT n = begin
@@ -104,11 +97,6 @@ module Numbers where
     transp (λ j → sucPathℤ j) (transp (λ j → (nPathℤ n) j) (pos 0)) ≡⟨ (whoZeroN {n}) <| cong (λ x → transp (λ j → sucPathℤ j) x) ⟩
     transp (λ j → sucPathℤ j) (pos n)                               ≡⟨ (LemmaT n) <| cong (λ x → pos (suc x)) ⟩
     pos (suc n)∎
-
-  symOnTrans : {A : Set} (B : Set) (p : A ≡ B) (C : Set) (q : B ≡ C) → (sym (trans p q)) ≡ trans (sym q) (sym p)
-
-  symOnTrans = pathJ _ (pathJ _ --Induction on q and then p.
-    refl)
 
   LemmaNeg : {n : ℕ} → (transp (λ j → (nPathℤ (suc n)) (~ j)) (pos 0)) ≡ (negsuc n)
   LemmaNeg {0} = refl --transp (λ j → trans sucPathℤ (trans sucPathℤ (nPathℤ n)) (~ j)) (pos 0)
@@ -185,17 +173,6 @@ module Numbers where
     negsuc 0 + pos 1 + p ≡⟨ (+-assoc (negsuc 0) (pos 1) p) <| eqTr ⟩
     negsuc 0 + (pos 1 + p) ≡⟨ ((LemmaT2 (pos 1 + p)) <| λ y → (sym (cong (λ x → negsuc 0 + x) y))) ⟩
     predℤ (transp (λ j → sucPathℤ j) p)∎
-
-
-    -- To avoid doing a mutual recursion, we use this lemma to prove that on succ at the same time.
-  LemmaTranspRev : {A : Set} {a : A} (f : A → A) (q : A ≡ A) (p : (b : A)  → transp (λ j → q j) (f b) ≡ f (transp (λ j → q j) b))  → transp (λ j → (sym q) j) (f a) ≡ f (transp (λ j → (sym q) j) a)
-
-  LemmaTranspRev {A} {a} f q p = sym (begin
-    f (transp (λ j → sym q j) a) ≡⟨  sym (transp-iso (λ i → q i) (f (transp (λ j → sym q j) a))) ⟩
-    transp (\ i → q (~ i)) (transp (λ i → q i) (f (transp (λ j → sym q j) a))) ≡⟨  (p (transp (λ j → sym q j) a)) <| cong (λ x → transp (\ i → q (~ i)) x )  ⟩
-    transp (\ i → q (~ i)) (f (transp (λ i → q i) (transp (λ j → sym q j) a))) ≡⟨ (transp-iso (λ i → q (~ i)) a) <| cong (λ x → transp (\ i → q (~ i)) (f x)) ⟩
-    transp (\ i → q (~ i)) (f a)∎)
-
 
   abstract
       LemmaPredTransp : {i p : ℤ} → (transp (λ j → (sym (iPathℤ i)) j) (predℤ p)) ≡ (predℤ (transp (λ j → (sym (iPathℤ i)) j) p))
