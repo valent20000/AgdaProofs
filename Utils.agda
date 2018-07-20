@@ -13,9 +13,9 @@ module Utils where
     _<|_ : {A : Set ℓ} {B : Set ℓ'} {x y : A} (a : x ≡ y) (cont : A → B) → cont x ≡ cont y  
     a <| cont = ((cong cont) a)
 
-    infix 3 _∙_
-    _∙_ : ∀ {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
-    a ∙ b = trans a b
+    --infix 3 _∙_
+    --_∙_ : ∀ {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+    --a ∙ b = trans a b
 
   symOnTrans : {A : Set} (B : Set) (p : A ≡ B) (C : Set) (q : B ≡ C) → (sym (trans p q)) ≡ trans (sym q) (sym p)
 
@@ -57,7 +57,7 @@ module Utils where
     LmTransSym : {A : Set ℓ} {a : A} (b : A) (q : a ≡ b) → trans q (sym q) ≡ refl
     LmTransSym {A} = pathJ _ (trans-id refl) 
 
-    infix 8 _^_
+    infix 95 _^_
          
     _^_ : {A :  Set ℓ} (f : A → A) (n : ℕ) → A → A
     f ^ 0 = λ x → x
@@ -109,6 +109,9 @@ module Utils where
  
   ElimComp : {A : Set} (n : ℕ) (e : A) → PathP _ _ _
   ElimComp {A} n e = LemmaIt n (λ x → (primComp (λ _ → A) i0 (λ i → empty) x)) (transp-refl e)
+
+  empCmp : {A : Set} (e : A) → A
+  empCmp {A} = (λ e → primComp (λ _ → A) i0 (λ i → empty) e)
 
   -- Could also be proven by transp-iso
   LmExchgPath : {A : Set} {a : A}  (B : Set) (p : A ≡ B) (b : B) (e : transp (λ i → p i) a ≡ b) → a ≡ transp (λ i → (sym p) i) b

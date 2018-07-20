@@ -68,7 +68,7 @@ module Numbers2 where
   LemmaIP : (i x : ℤ) → transp (λ j → (iPathℤ i) j) x ≡ x + i
   LemmaIP (pos 0) x = transp-refl x
   
-  LemmaIP (negsuc 0) x = let A = ElimComp 4 (predℤ (((λ e → primComp (λ _ → Int) i0 (λ i → empty) e) ^ 3) x)) ; B = ElimComp 3 x <| (λ e → predℤ e) in λ j → trans A B j
+  LemmaIP (negsuc 0) x = let A = ElimComp 4 (predℤ ((empCmp ^ 3) x)) ; B = ElimComp 3 x <| (λ e → predℤ e) in λ j → trans A B j
 
   LemmaIP (pos (suc n)) x = begin
     transp (λ j → trans sucPathℤ (nPathℤ n) j) x ≡⟨ (LemmaCommN n <| λ e → transp (λ j → e j) x ) ⟩
