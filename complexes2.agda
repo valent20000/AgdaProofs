@@ -5,8 +5,11 @@ module complexes2 where
   open import Cubical.Examples.Int
   open import Cubical.PathPrelude
   open import Cubical.Lemmas
+  
   open import Cat.Category
   open import Cat.Prelude
+
+  open import Cat.Category.ZeroCategory
 
   open import Numbers2
   open import Utils
@@ -24,49 +27,27 @@ module complexes2 where
         ∀ i ∈ ℤ; (chain i) ∙ (chain (i+1)) = 0 (arrow)   
   --}
 
-  record ZeroCategory (ℓa ℓb : Level) : Set (lsuc (ℓa ⊔ ℓb)) where
-
-    field {{c}} : (Category ℓa ℓb)
-    open Category c public
-
-    field
-      hasZero : Σ Object (λ zer → (IsInitial zer × IsTerminal zer)) -- 
-
-    cZero = (fst hasZero)
-
-    -- "Shortcuts" to make proofs clearer. Uniqueness of arrows from and to  (terminal and initial)
+  module _ (ℓa ℓb : Level) {cat : ZeroCategory ℓa ℓb} where
     
-    proofTerm : {X : Object} → (y : Arrow X (fst hasZero)) → fst (snd (snd hasZero)) ≡ y
-    proofTerm {X} = (snd ((snd (snd hasZero)) {X = X}))
+    record ChainComplex  : Set (ℓa ⊔ ℓb) where
 
-
-    proofInit : {X : Object} → (y : Arrow (fst hasZero) X) → fst (fst (snd hasZero)) ≡ y
-    proofInit {X} = (snd ((fst (snd hasZero)) {X = X}))
-
-
-    --Gives the zero function associated to A and B
-    zeroFunc : (A : Object) (C : Object) → (Arrow A C)  
-    zeroFunc = λ A C → (fst ((fst (snd hasZero)) {X = C})) <<< (fst (snd (snd hasZero) {X = A}))
-    
-  record ChainComplex (ℓa ℓb : Level) {cat : ZeroCategory ℓa ℓb} : Set (ℓa ⊔ ℓb) where
-
-    open ZeroCategory cat public
-    
-    field
-      thisO : ℤ → Object
-      thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
+      open ZeroCategory cat public
       
-      isChain : (i : ℤ) → (thisA (predℤ i)) <<< (thisA i) ≡ zeroFunc (thisO i) (thisO (predℤ (predℤ i)))
+      field
+        thisO : ℤ → Object
+        thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
+        
+        isChain : (i : ℤ) → (thisA (predℤ i)) <<< (thisA i) ≡ zeroFunc (thisO i) (thisO (predℤ (predℤ i)))
 
-
-  {--
-    
-    Now we are going to define a certain type of chain complexes;
-    .. ← 0 ← .. ← 0 ← A ← 0 ← .. ← 0 ← ..
-    With A in the i ∈ ℤ position.
-
-  --}
+    {--
+      
+      Now we are going to define a certain type of chain complexes;
+      .. ← 0 ← .. ← 0 ← A ← 0 ← .. ← 0 ← ..
+      With A in the i ∈ ℤ position.
   
+    --}
+
+
   -- We now assume we have a ZeroCategory
   
   module _ (ℓa ℓb : Level) (cat : ZeroCategory ℓa ℓb) where

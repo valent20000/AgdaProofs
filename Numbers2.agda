@@ -3,14 +3,16 @@ module Numbers2 where
 
   open import Agda.Primitive --lsuc etc...
   open import Cubical.FromStdLib renaming (_+_ to _+ℕ_)
+  
   open import Cubical.Examples.Int 
   open import Cubical.PathPrelude
   open import Cubical.Lemmas
   open import Cat.Category
   open import Cat.Prelude --hiding (_×_) --using
 
-  open import Utils
+  open import Data.Integer.Base renaming (_+_ to _+d_) hiding (_⊔_) hiding (suc) renaming (ℤ to dInt)
 
+  open import Utils
 
   ℤ = Int
 
@@ -31,6 +33,12 @@ module Numbers2 where
   _+_ a (pos (suc n)) = sucℤ (a + (pos n))
   _+_ a (negsuc 0) = (predℤ a)
   _+_ a (negsuc (suc n)) = predℤ( a + negsuc n )
+
+  sameType : ℤ ≡ dInt
+  sameType = ?
+  
+  sameOp : ∀ a b → a + b ≡ transp (λ i → sameType (~ i)) (a +d b)
+  sameOp a b = ?
 
   -- Trivial Lemma about +
 
