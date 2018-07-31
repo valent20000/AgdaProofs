@@ -5,6 +5,19 @@ module Utils where
   open import Cubical.Lemmas
   open import Cubical.FromStdLib
 
+  open import Agda.Primitive
+  open import Agda.Builtin.Equality renaming (_≡_ to _≡b_) renaming (refl to reflb)
+
+  -- This lemma transforms equality from the standard library to Cubical equalities.
+  
+  eqTr : {A : Set} {a b : A} (p : a ≡b b) → a ≡ b
+  eqTr reflb = refl
+
+  infix 3 _∙_
+  _∙_ : ∀ {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+  a ∙ b = trans a b
+
+
   module _ {ℓ} {ℓ'} where
     
     -- This operator is just application, but it makes proof easier to read. See later
@@ -13,9 +26,11 @@ module Utils where
     _<|_ : {A : Set ℓ} {B : Set ℓ'} {x y : A} (a : x ≡ y) (cont : A → B) → cont x ≡ cont y  
     a <| cont = ((cong cont) a)
 
-    --infix 3 _∙_
-    --_∙_ : ∀ {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
-    --a ∙ b = trans a b
+    -- This is just function application, sometimes it's convenient.
+    infix 4 _>|_
+    _>|_ : {A : Set ℓ} {B : Set ℓ'} (x : A) (f : A → B) → B
+    _>|_ x f = f x
+    
 
   symOnTrans : {A : Set} (B : Set) (p : A ≡ B) (C : Set) (q : B ≡ C) → (sym (trans p q)) ≡ trans (sym q) (sym p)
 

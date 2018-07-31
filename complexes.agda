@@ -19,7 +19,7 @@ module complexes where
   open import Cat.Prelude --hiding (_×_) --using
 
   open import Numbers
-  open import Utils hiding (_<|_)
+  open import Utils
 
   --- We define what a chain complex is.
   {-- In idea :
@@ -155,7 +155,7 @@ module complexes where
       LmCheck1 : (thisOi i) ≡ A
       LmCheck1 = begin
         thisOi i ≡⟨ ElimCompL 1 (thisO (primComp (λ j → iPathℤ i (~ j)) i0 (λ i₁ → empty) i)) ⟩
-        (thisO (primComp (λ j → iPathℤ i (~ j)) i0 (λ i₁ → empty) i)) ≡⟨ sym (LmExchgPath _ _ _ (whoZero {i = i})) <| cong (λ e → thisO e) ⟩
+        (thisO (primComp (λ j → iPathℤ i (~ j)) i0 (λ i₁ → empty) i)) ≡⟨ sym (LmExchgPath _ _ _ (whoZero {i = i})) <| (λ e → thisO e) ⟩
         thisO (pos 0) ≡⟨⟩
         A ∎
 
@@ -239,9 +239,9 @@ module complexes where
                               (trans refl
                               (trans refl
                               (trans (sym (LemmaTrans p))
-                                     refl))))) ≡⟨ LemmaIt 3 (λ x → trans refl x) (trans-id-l (trans (sym (LemmaTrans p)) refl)) <| cong (λ e → sym(trans (LemmaTrans p) e) ) ⟩
-        sym(trans (LemmaTrans p) (trans (sym (LemmaTrans p)) refl)) ≡⟨ trans-id (sym(LemmaTrans p)) <| cong (λ x → sym(trans (LemmaTrans p) x)) ⟩
-        sym(trans (LemmaTrans p) (sym (LemmaTrans p))) ≡⟨ LmTransSym _ (LemmaTrans p) <| cong (λ x → sym x) ⟩
+                                     refl))))) ≡⟨ LemmaIt 3 (λ x → trans refl x) (trans-id-l (trans (sym (LemmaTrans p)) refl)) <| (λ e → sym(trans (LemmaTrans p) e) ) ⟩
+        sym(trans (LemmaTrans p) (trans (sym (LemmaTrans p)) refl)) ≡⟨ trans-id (sym(LemmaTrans p)) <| (λ x → sym(trans (LemmaTrans p) x)) ⟩
+        sym(trans (LemmaTrans p) (sym (LemmaTrans p))) ≡⟨ LmTransSym _ (LemmaTrans p) <| (λ x → sym x) ⟩
         refl ∎
 
 
@@ -270,8 +270,8 @@ module complexes where
         let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; cb = (cong thisO B) ; ca = (cong (\ i → thisO (predℤ i)) A) in
         
         (sym (cong thisO (trans B (cong predℤ A)))) ≡⟨⟩
-        sym (cong thisO (trans B (cong predℤ A))) ≡⟨ sym (trans-cong thisO B _ (cong predℤ A)) <| cong (λ x → sym x) ⟩
-        sym (trans cb (cong thisO (cong predℤ A))) ≡⟨ (LmCongCong thisO predℤ _ A) <| cong (λ x → sym(trans (cong thisO B) x) ) ⟩
+        sym (cong thisO (trans B (cong predℤ A))) ≡⟨ sym (trans-cong thisO B _ (cong predℤ A)) <| (λ x → sym x) ⟩
+        sym (trans cb (cong thisO (cong predℤ A))) ≡⟨ (LmCongCong thisO predℤ _ A) <| (λ x → sym(trans (cong thisO B) x) ) ⟩
         sym (trans cb ca) ≡⟨ (symOnTransL _ cb _ ca) ⟩
         (trans (sym ca) (sym cb))∎
 
@@ -282,11 +282,11 @@ module complexes where
       --Proof worked and then agda couldn't parse it anymore...
       LemmaInLine p = begin
         let A = LemmaPredTransp {i = i} {p = p} ; B = LemmaPredTransp {i = i} {p = predℤ p} ; cb = (cong thisO B) ; ca = (cong (\ i → thisO (predℤ i)) A) in
-        trans (trans cb ca) (sym (cong thisO (trans B (cong predℤ A)))) ≡⟨ LemmaInLine' p <| cong (λ X → trans (trans cb ca) X)  ⟩
+        trans (trans cb ca) (sym (cong thisO (trans B (cong predℤ A)))) ≡⟨ LemmaInLine' p <| (λ X → trans (trans cb ca) X)  ⟩
         trans (trans cb ca) (trans (sym ca) (sym cb)) ≡⟨  trans-assoc {p = (trans cb ca)} {q = (sym ca)} {r = (sym cb)} ⟩
-        trans (trans (trans cb ca) (sym ca)) (sym cb) ≡⟨  sym( trans-assoc {p = cb} {q = ca} {r = (sym ca)}) <| cong (λ x → trans x (sym cb))  ⟩
-        trans (trans cb (trans ca (sym ca))) (sym cb) ≡⟨ LmTransSym _ ca <| cong (λ x → trans (trans cb x) (sym cb)) ⟩
-        trans (trans cb refl) (sym cb) ≡⟨ trans-id cb <| cong (λ x → trans x (sym cb)) ⟩
+        trans (trans (trans cb ca) (sym ca)) (sym cb) ≡⟨  sym( trans-assoc {p = cb} {q = ca} {r = (sym ca)}) <| (λ x → trans x (sym cb))  ⟩
+        trans (trans cb (trans ca (sym ca))) (sym cb) ≡⟨ LmTransSym _ ca <| (λ x → trans (trans cb x) (sym cb)) ⟩
+        trans (trans cb refl) (sym cb) ≡⟨ trans-id cb <| (λ x → trans x (sym cb)) ⟩
         trans cb (sym cb) ≡⟨ LmTransSym _ cb ⟩
         refl ∎
         
@@ -298,24 +298,24 @@ module complexes where
                                   X)) ; e1 =
                                   (trans (sym (cong thisO (trans B (cong predℤ A))))
                                   (trans (sym (LemmaTrans (predℤ (predℤ p))))
-                                    refl)) in c1 (trans refl e1) ≡⟨ (trans-id-l e1) <| cong c1 ⟩
+                                    refl)) in c1 (trans refl e1) ≡⟨ (trans-id-l e1) <| c1 ⟩
                                     
         let e2 = λ (X : thisO (transp (λ j → sym (iPathℤ i) j) (predℤ (predℤ p))) ≡ thisOi (predℤ (predℤ p))) → (trans (sym (cong thisO (trans B (cong predℤ A)))) X) in
         c1 (e2 (trans (sym (LemmaTrans (predℤ (predℤ p))))
-                                    refl)) ≡⟨ trans-id (sym (LemmaTrans (predℤ (predℤ p)))) <| cong (λ X → c1 (e2 X)) ⟩ 
+                                    refl)) ≡⟨ trans-id (sym (LemmaTrans (predℤ (predℤ p)))) <| (λ X → c1 (e2 X)) ⟩ 
                                     
        let a = (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A)) ; b = (sym (cong thisO (trans B (cong predℤ A)))) ; c = (sym (LemmaTrans (predℤ (predℤ p)))) in
-       sym (trans (LemmaTrans (predℤ (predℤ p))) (trans a (trans b c)) ) ≡⟨ trans-assoc {p = a} {q = b} {r = c} <| cong (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) X) ) ⟩
+       sym (trans (LemmaTrans (predℤ (predℤ p))) (trans a (trans b c)) ) ≡⟨ trans-assoc {p = a} {q = b} {r = c} <| (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) X) ) ⟩
                                           
         sym (trans (LemmaTrans (predℤ (predℤ p)))
                                   (trans (trans (trans (cong thisO B) (cong (\ i → thisO (predℤ i)) A))
                                          (sym (cong thisO (trans B (cong predℤ A)))))
-                                          (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ (LemmaInLine p) <| cong (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) (trans X (sym (LemmaTrans (predℤ (predℤ p)))) )))  ⟩
+                                          (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ (LemmaInLine p) <| (λ X → sym (trans (LemmaTrans (predℤ (predℤ p))) (trans X (sym (LemmaTrans (predℤ (predℤ p)))) )))  ⟩
                                           
         sym (trans (LemmaTrans (predℤ (predℤ p)))
-                   (trans refl (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ trans-id-l (sym (LemmaTrans (predℤ (predℤ p)))) <| cong (λ x → sym (trans (LemmaTrans (predℤ (predℤ p))) x)) ⟩
+                   (trans refl (sym (LemmaTrans (predℤ (predℤ p)))) )) ≡⟨ trans-id-l (sym (LemmaTrans (predℤ (predℤ p)))) <| (λ x → sym (trans (LemmaTrans (predℤ (predℤ p))) x)) ⟩
                    
-        sym ( trans (LemmaTrans (predℤ (predℤ p))) (sym (LemmaTrans (predℤ (predℤ p)))) ) ≡⟨  LmTransSym _ (LemmaTrans (predℤ(predℤ p))) <| cong (λ x → sym x) ⟩
+        sym ( trans (LemmaTrans (predℤ (predℤ p))) (sym (LemmaTrans (predℤ (predℤ p)))) ) ≡⟨  LmTransSym _ (LemmaTrans (predℤ(predℤ p))) <| (λ x → sym x) ⟩
         refl ∎)
 
       isChain : (p : ℤ) → (thisAi (predℤ p)) <<< (thisAi p) ≡ zeroFunc (thisOi p) (thisOi (predℤ (predℤ p)))

@@ -2,7 +2,6 @@
 module complexes2 where
 
   open import Cubical.FromStdLib hiding (_×_) hiding (_+_)
-  open import Cubical.Examples.Int
   open import Cubical.PathPrelude
   open import Cubical.Lemmas
   
@@ -12,6 +11,10 @@ module complexes2 where
   open import Cat.Category.ZeroCategory
 
   open import Numbers2
+  
+  open import Cubical.FromStdLib renaming (_+_ to _+ℕ_)
+  open import Data.Integer.Base renaming (_+_ to _+d_) hiding (_⊔_) renaming (suc to sucℤ) renaming (pred to predℤ) renaming (+_ to pos) renaming (-[1+_] to negsuc)
+  
   open import Utils
 
   --- We define what a chain complex is.
@@ -31,12 +34,12 @@ module complexes2 where
     
     record ChainComplex  : Set (ℓa ⊔ ℓb) where
 
-      open ZeroCategory cat public
+      open ZeroCategory cat
       
       field
         thisO : ℤ → Object
         thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
-        
+
         isChain : (i : ℤ) → (thisA (predℤ i)) <<< (thisA i) ≡ zeroFunc (thisO i) (thisO (predℤ (predℤ i)))
 
     {--

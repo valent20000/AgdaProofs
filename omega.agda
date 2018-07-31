@@ -6,6 +6,8 @@ module omega where
   open import Cubical.PathPrelude
   open import Cubical.Lemmas
 
+  open import Agda.Primitive
+
   -- We'll use this syntax a lot : ? ≡⟨ ? ⟩ ?
 
   -- The definition of Ω used here.
@@ -15,6 +17,33 @@ module omega where
 
   Ω² : (A : Set) → (a : A) → Set
   Ω² A a = Ω (a ≡ a) (refl {x = a}) -- (refl {x = a}) ≡ (refl {x = a})
+
+
+--   module _ {ℓ} where
+  
+--     itLsuc : (n : Nat) → Level
+--     itLsuc 0 = ℓ
+--     itLsuc (suc n) = lsuc (itLsuc n)
+  
+--   module _ {ℓ} where
+  
+--     refln : (A : Set ℓ) (a : A) (n : Nat) → {!Set (itLsuc n)!}
+--     refln A a 0 = a
+--     refln A a (suc n) = {!!} --refl {x = refln A a n}
+
+  --
+  -- Pay attention to the order !!!!!!!!!!!!
+  --
+  
+  Ωn : (A : Set) (a : A) (n : Nat) → Set
+  refln : (A : Set) (a : A) (n : Nat) →  Ωn A a n
+
+  Ωn A a 0 = A
+  Ωn A a (suc n) = Ω (Ωn A a n) (refln A a n)
+
+  refln A a zero = a --a
+  refln A a (suc n) = {!!} --refl {x = refln A a n}
+
 
   ---- Lemma: Transp-trans. This shows that concatenating path is the same a transporting.
 
