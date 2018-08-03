@@ -4,9 +4,12 @@ module Utils where
   open import Cubical.PathPrelude
   open import Cubical.Lemmas
   open import Cubical.FromStdLib
+  open import Cubical.GradLemma
 
   open import Agda.Primitive
   open import Agda.Builtin.Equality renaming (_≡_ to _≡b_) renaming (refl to reflb)
+
+  open import Cat.Category
 
   -- This lemma transforms equality from the standard library to Cubical equalities.
   
@@ -134,3 +137,48 @@ module Utils where
     a ≡⟨ trans (sym (transp-refl a)) e ⟩
     b ≡⟨ sym (transp-refl b) ⟩
     transp (λ i → sym (λ i₁ → A) i) b ∎
+
+  module _ {ℓ} where
+
+    -- With univalence things are way easyier...
+    
+    transEq : {A B C : Set ℓ} → A ≃ B → B ≃ C → A ≃ C
+    transEq eq eq' = pathToEquiv (trans (equivToPath eq) (equivToPath eq'))
+
+  --   transEq eq eq' .fst = (λ x → (eq' .fst) ((eq .fst) x))
+  --   transEq {A} {B} {C} eq eq' .snd = gradLemma ac ca cc aa
+  --     where
+      
+  --     ac : A → C
+  --     ac = (λ x → (eq' .fst) ((eq .fst) x))
+
+  --     ca : C → A
+  --     ca = (λ x → (invEquiv eq .fst) (invEquiv eq' .fst x))
+
+  --     aa : (x : A) → ca (ac x) ≡ x
+  --     aa x = begin
+  --       ca (ac x) ≡⟨ {!!} ⟩
+  --       (invEquiv eq .fst) (invEquiv eq' .fst ((eq' .fst) ((eq .fst) x))) ≡⟨ {!ca (ac x)!} ⟩
+  --       (invEquiv eq .fst) ((eq .fst) x) ≡⟨ {!!} ⟩
+  --       x ∎
+
+  --     cc : (y : C) → ac (ca y) ≡ y
+  --     cc y = {!!}
+      
+  --   --transEq eq eq' .snd .snd = {!!}
+    
+
+  module _ {ℓa ℓb} (c : RawCategory ℓa ℓb) where
+
+    open RawCategory c
+
+    lemmaX : {A B C : Object} (D : Object) (pa : A ≡ D) (E : Object) (pb : B ≡ E) (F : Object) (pc : C ≡ F) (f : Arrow A B) (g : Arrow B C) →
+      transp (λ j → Arrow (pb j) (pc j)) g <<< transp (λ j → Arrow (pa j) (pb j)) f ≡ transp (λ j → Arrow (pa j) (pc j)) (g <<< f)
+      
+    lemmaX {A} {B} {C} = pathJ _ (pathJ _ (pathJ _ λ f g → begin
+      transp (λ j → Arrow B C) g <<< transp (λ j → Arrow A B) f ≡⟨ (let
+                                                                       X = transp-refl g
+                                                                       Y = transp-refl f
+                                                                       in λ j → (X j) <<< (Y j)) ⟩
+      (g <<< f) ≡⟨ sym (transp-refl (g <<< f)) ⟩
+      transp (λ j → Arrow A C) (g <<< f) ∎))
