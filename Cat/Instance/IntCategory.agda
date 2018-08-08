@@ -9,6 +9,7 @@ module Cat.Instance.IntCategory where
 
   open import Cat.Category.ZeroCategory
   open import Cat.Categories.Fun
+  open import Cat.Categories.Opposite
 
   import Data.Nat.Base as ℕ
   open import Data.Integer.Base renaming (+_ to pos) renaming (-[1+_] to negsuc)
@@ -102,5 +103,5 @@ module Cat.Instance.IntCategory where
     
   module IntFunc {ℓa ℓb} (catZ : ZeroCategory ℓa ℓb) where
 
-    IntFunc : Category (lzero Cat.Prelude.⊔ lzero Cat.Prelude.⊔ ℓa Cat.Prelude.⊔ ℓb) (lzero Cat.Prelude.⊔ lzero Cat.Prelude.⊔ ℓb)
-    IntFunc = Fun.Fun IntCategoryM.IntCategory (catZ .ZeroCategory.c)
+    RevIntFunc : Category (lzero Cat.Prelude.⊔ lzero Cat.Prelude.⊔ ℓa Cat.Prelude.⊔ ℓb) (lzero Cat.Prelude.⊔ lzero Cat.Prelude.⊔ ℓb)
+    RevIntFunc = Fun.Fun (opposite (IntCategoryM.IntCategory)) (catZ .ZeroCategory.c)
