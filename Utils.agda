@@ -183,10 +183,10 @@ module Utils where
       (g <<< f) ≡⟨ sym (transp-refl (g <<< f)) ⟩
       transp (λ j → Arrow A C) (g <<< f) ∎))
 
-    lemmaX2 : {A B C : Object} (D : Object) (pa : A ≡ D) (E : Object) (pb : B ≡ E) (F : Object) (pc : C ≡ F) (Px : B ≡ E) (f : Arrow A B) (g : Arrow B C) →
-     transp (λ j → Arrow (Px j) (pc j)) g <<< transp (λ j → Arrow (pa j) (pb j)) f ≡ transp (λ j → Arrow {!!} {!!}) (g <<< f)
+    -- lemmaX2 : {A B C : Object} (D : Object) (pa : A ≡ D) (E : Object) (pb : B ≡ E) (F : Object) (pc : C ≡ F) (Px : B ≡ E) (f : Arrow A B) (g : Arrow B C) →
+    --  transp (λ j → Arrow (Px j) (pc j)) g <<< transp (λ j → Arrow (pa j) (pb j)) f ≡ transp (λ j → Arrow {!!} {!!}) (g <<< f)
       
-    lemmaX2 {A} {B} {C} = pathJ _ (pathJ _ (pathJ _ λ Px f g → begin
-     transp (λ j → Arrow (Px j) C) g <<< transp (λ j → Arrow A B) f ≡⟨ {!!} ⟩
-     {!!} ≡⟨ {!!} ⟩
-     transp (λ i → {!!}) (g <<< f) ∎ ))
+    -- lemmaX2 {A} {B} {C} = pathJ _ (pathJ _ (pathJ _ λ Px f g → begin
+    --  transp (λ j → Arrow (Px j) C) g <<< transp (λ j → Arrow A B) f ≡⟨ {!!} ⟩
+    --  {!!} ≡⟨ {!!} ⟩
+    --  transp (λ i → {!!}) (g <<< f) ∎ ))
