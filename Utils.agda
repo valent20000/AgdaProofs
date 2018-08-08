@@ -20,6 +20,14 @@ module Utils where
   _∙_ : ∀ {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
   a ∙ b = trans a b
 
+  -- For the inspect idiom
+  -- Used in the 'Bonus part'
+  data Singleton {a} {A : Set a} (x : A) : Set a where
+    _with≡_ : (y : A) → x ≡ y → Singleton x
+    
+  inspect : ∀ {a} {A : Set a} (x : A) → Singleton x
+  inspect x = x with≡ refl
+
 
   module _ {ℓ} {ℓ'} where
     

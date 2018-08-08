@@ -95,6 +95,10 @@ module Cat.Instance.ChainComplexCategory where
       n-arrow p zero i = catZ .ZeroCategory.identity
       n-arrow p (suc n) i = (catZ .ZeroCategory._<<<_) (p .snd ((predℤ ^ n) i)) (n-arrow p n i)
 
+      -- State that it coincide on what you want.
+      n-arrow-coin : (p : ptype) (i : ℤ) → n-arrow p (suc 0) i ≡ (p .snd i)
+      n-arrow-coin p i = isIdentity .snd
+
       ~o : ptype  → (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object 
 
       -- Carefull, chain complexes are reversed !
@@ -118,7 +122,6 @@ module Cat.Instance.ChainComplexCategory where
             pn = ineq-cmp-onpred {i = A} Ip.≤-refl .snd
         in
         transp (λ i → Arrow (pair .fst A) (pair .fst (pn i))) (n-arrow pair n A) ≡⟨ {!_<<<_!} ⟩
-        {!!}                                                                             ≡⟨ {!!} ⟩
         {!!} ∎  
       IsFunctor.isDistributive (Functor.isFunctor (~o pair)) {A} {B} {C} {b≤a} {c≤b} = begin
         let c≤a = (opposite IntCategory [ c≤b ∘ b≤a ])
@@ -132,9 +135,6 @@ module Cat.Instance.ChainComplexCategory where
             ta = pair .snd
         in
         transp (λ i → Arrow (to A) (to (pnca i))) (n-arrow pair nca A)     ≡⟨ {!!}   ⟩
-        {!!}                                                               ≡⟨ {!(ineq-cmp-onpred c≤b .snd i1)!}  ⟩
-
-
         {!(transp (λ j → Arrow (to (pnba (~ j))) (to (pncb j))) (n-arrow pair ncb B)) <<< (n-arrow pair nba A)!}    ≡⟨ sym ({!!}) ⟩
 
         --(transp (λ j → Arrow (to (pnba (~ j))) (to (pncb j))) (n-arrow pair ncb B)) <<< (n-arrow pair nba A)
@@ -144,388 +144,421 @@ module Cat.Instance.ChainComplexCategory where
 
 ------- sym (lemmaX {!(c .Category.raw)!} (to A) refl (to B) (λ i → (to (pnba i))) (to C) (λ i → (to (pncb i))) (n-arrow pair nba A) (n-arrow pair ncb B))
 
-  -- module ChainComplexCategoryM (ℓa ℓb : Level) (catZ : ZeroCategory ℓa ℓb) where
+  module ChainComplexCategoryM (ℓa ℓb : Level) (catZ : ZeroCategory ℓa ℓb) where
 
-  --   open Category using (raw ; isCategory)
-  --   open RawCategory using (Object ; identity ; _≊_) --≊
-  --   open IsCategory using (isPreCategory ; univalent)
-  --   open IsPreCategory using (isAssociative ; isIdentity ; arrowsAreSets)
+    open Category using (raw ; isCategory)
+    open RawCategory using (Object ; identity ; _≊_) --≊
+    open IsCategory using (isPreCategory ; univalent)
+    open IsPreCategory using (isAssociative ; isIdentity ; arrowsAreSets)
     
-  --   open ChainMapM ℓa ℓb catZ
-  --   open ChainMap
-  --   open ChainComplex
+    open ChainMapM ℓa ℓb catZ
+    open ChainMap
+    open ChainComplex
 
-  --   assoc = catZ .ZeroCategory.c .Category.isCategory .IsCategory.isPreCategory .IsPreCategory.isAssociative
+    assoc = catZ .ZeroCategory.c .Category.isCategory .IsCategory.isPreCategory .IsPreCategory.isAssociative
 
-  --   open ZeroCategory catZ
+    open ZeroCategory catZ
 
-  --   ChainComplexCategory : Category (ℓa ⊔ ℓb) (ℓa ⊔ ℓb)
+    ChainComplexCategory : Category (ℓa ⊔ ℓb) (ℓa ⊔ ℓb)
 
-  --   ChainComplexCategory .raw .Object = ChainComplex ℓa ℓb {cat = catZ}
-  --   ChainComplexCategory .raw .RawCategory.Arrow = λ x y → ChainMap x y
-  --   ChainComplexCategory .raw .identity {A} = idChainMap {c = A}
+    ChainComplexCategory .raw .Object = ChainComplex ℓa ℓb {cat = catZ}
+    ChainComplexCategory .raw .RawCategory.Arrow = λ x y → ChainMap x y
+    ChainComplexCategory .raw .identity {A} = idChainMap {c = A}
     
-  --   ChainComplexCategory .raw .RawCategory._<<<_ {A} {B} {C} bc ab .fn n = bc .fn n <<< ab .fn n
-  --   ChainComplexCategory .raw .RawCategory._<<<_ {A} {B} {C} bc ab .commute n =  begin
+    ChainComplexCategory .raw .RawCategory._<<<_ {A} {B} {C} bc ab .fn n = bc .fn n <<< ab .fn n
+    ChainComplexCategory .raw .RawCategory._<<<_ {A} {B} {C} bc ab .commute n =  begin
     
-  --     bc .fn (predℤ n) <<< ab .fn (predℤ n) <<< A .thisA n ≡⟨ sym (assoc) ⟩
-  --     bc .fn (predℤ n) <<< (ab .fn (predℤ n) <<< A .thisA n) ≡⟨ (ab .commute n <| λ x → bc .fn (predℤ n) <<< x) ⟩
-  --     bc .fn (predℤ n) <<< ((B .thisA n)  <<< (ab .fn n)) ≡⟨ assoc ⟩
-  --     bc .fn (predℤ n) <<< (B .thisA n)  <<< (ab .fn n) ≡⟨ (bc .commute n <| λ x → x <<< (ab .fn n)) ⟩
-  --     C .thisA n <<< bc .fn n <<< ab .fn n ≡⟨ sym (assoc) ⟩
-  --     C .thisA n <<< (bc .fn n <<< ab .fn n) ∎
+      bc .fn (predℤ n) <<< ab .fn (predℤ n) <<< A .thisA n ≡⟨ sym (assoc) ⟩
+      bc .fn (predℤ n) <<< (ab .fn (predℤ n) <<< A .thisA n) ≡⟨ (ab .commute n <| λ x → bc .fn (predℤ n) <<< x) ⟩
+      bc .fn (predℤ n) <<< ((B .thisA n)  <<< (ab .fn n)) ≡⟨ assoc ⟩
+      bc .fn (predℤ n) <<< (B .thisA n)  <<< (ab .fn n) ≡⟨ (bc .commute n <| λ x → x <<< (ab .fn n)) ⟩
+      C .thisA n <<< bc .fn n <<< ab .fn n ≡⟨ sym (assoc) ⟩
+      C .thisA n <<< (bc .fn n <<< ab .fn n) ∎
 
 
-  --   ChainComplexCategory .isCategory .isPreCategory .isAssociative {A} {B} {C} {D} {f} {g} {h} = ChainMap≡ (funExt λ x → catZ .isAssociative)
-  --   ChainComplexCategory .isCategory .isPreCategory .isIdentity {A} {B} {c} = ChainMap≡ (funExt (λ x → fst (catZ .isIdentity))) , ChainMap≡ (funExt (λ x → snd (catZ .isIdentity)))
+    ChainComplexCategory .isCategory .isPreCategory .isAssociative {A} {B} {C} {D} {f} {g} {h} = ChainMap≡ (funExt λ x → catZ .isAssociative)
+    ChainComplexCategory .isCategory .isPreCategory .isIdentity {A} {B} {c} = ChainMap≡ (funExt (λ x → fst (catZ .isIdentity))) , ChainMap≡ (funExt (λ x → snd (catZ .isIdentity)))
 
-  --   --       {-- Three way to prove that :
+    --       {-- Three way to prove that :
 
-  --   --         - Directly; repeationg the proof for Σs. (& Adapting Cubical.Sigma)
-  --   --         - Transforming the record in a Σ back and forth. (& Cubical.Sigma)
-  --   --         - Directly, but using Squares instead of sets. (& Adapting Cubical.DirectSigma, it was done above)
+    --         - Directly; repeationg the proof for Σs. (& Adapting Cubical.Sigma)
+    --         - Transforming the record in a Σ back and forth. (& Cubical.Sigma)
+    --         - Directly, but using Squares instead of sets. (& Adapting Cubical.DirectSigma, it was done above)
 
-  --   --       --}
+    --       --}
 
-  --   ChainComplexCategory .isCategory .isPreCategory .arrowsAreSets {A} {B} =
-  --     square-isSet (setCMSq {sA = psA} {sB = psB})
+    ChainComplexCategory .isCategory .isPreCategory .arrowsAreSets {A} {B} =
+      square-isSet (setCMSq {sA = psA} {sB = psB})
       
-  --     where
-  --       psA : hasSquares ((n : ℤ) → Arrow (A .thisO n) (B .thisO n))
-  --       psA = isSet-square (setPi λ x → catZ .arrowsAreSets)
+      where
+        psA : hasSquares ((n : ℤ) → Arrow (A .thisO n) (B .thisO n))
+        psA = isSet-square (setPi λ x → catZ .arrowsAreSets)
         
-  --       psB : (fn : (n : ℤ) → Arrow (A .thisO n) (B .thisO n)) → hasSquares ((n : ℤ) → fn (predℤ n) <<< A .thisA n ≡ B .thisA n <<< fn n)
-  --       psB fn = isSet-square (setPi λ x → propSet (catZ .arrowsAreSets (fn (predℤ x) <<< A .thisA x) (B .thisA x <<< fn x)))
-        
-
-  --   ChainComplexCategory .isCategory .univalent {A} {B} = {!univalenceFrom≃ !} --univalenceFrom≃ (transEq (transEq lemma1 lemma2) lemma3)
-  --     --univalenceFrom≃ (transEq (transEq lemma1 lemma2) lemma3)
-  --     --transEq (transEq lemma1 lemma2) lemma3 .snd
-  --     where
-
-
-  --       -- Lemma 1.
-  --       ---
-  --       ---
-        
-  --       stype = Σ (A .thisO ≡ B .thisO) (λ eq → Σ ((λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ]) (λ eq' → ((λ j → (i : ℤ) → (eq' j) (predℤ i) <<< (eq' j) i ≡ zeroFunc (eq j i) (eq j (predℤ (predℤ i)))) [ A .isChain ≡ B .isChain ])) )
-
-  --       lr1 = (λ w → (λ j p → (w j) .thisO p) , ((λ j p → (w j) .thisA p) , λ j i → (w j) .isChain i)) --w for witness
-  --       rl1 = λ esig j → record { thisO = esig .fst j ; thisA = esig .snd .fst j ; isChain = esig .snd .snd j }
-
-  --       ll1 = λ (x : A ≡ B) → refl
-
-  --       rr1 = λ (y : stype) → refl
-        
-  --       lemma1 : (A ≡ B) ≃ stype
-        
-  --       lemma1 .fst = lr1
-  --       lemma1 .snd = gradLemma lr1 rl1 rr1 ll1
-
-  --       -- Lemma 2.
-  --       ---
-  --       ---
-        
-  --       stype2 =  Σ (A .thisO ≡ B .thisO) (λ eq → (λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ])
-
-  --       lr : stype → stype2
-  --       lr esig .fst j = esig .fst j
-  --       lr esig .snd j = esig .snd .fst j
-
-
-
-        
-  --       thisOt = ℤ → (catZ .Object)
-        
-  --       thisAt : (to : thisOt) → Set ℓb
-  --       thisAt = λ to → (i : ℤ) → Arrow (to i) (to (predℤ i))
-
-  --       isChaint : (to : ℤ → (catZ .Object)) (ta : (i : ℤ) → Arrow (to i) (to (predℤ i))) → Set ℓb
-  --       isChaint to ta = (i : ℤ) → (ta (predℤ i)) <<< (ta i) ≡ zeroFunc (to i) (to (predℤ (predℤ i)))
-
-
-
-  --       -- Proving that isChain is a proposition.
-  --       isProp-isChain : ∀ to ta → isProp (isChaint to ta)
-  --       isProp-isChain to ta = propPi λ p → catZ .arrowsAreSets ((ta (predℤ p) <<< ta p)) (zeroFunc (to p) (to (predℤ (predℤ p))))
-
-  --       --The equality is thus contractible :
-  --       isContr-eqisChain :  ∀ to ta → (x y : (isChaint to ta)) → isContr (x ≡ y)
-  --       isContr-eqisChain to ta x y = hasLevelPath ⟨-2⟩ (isProp-isChain to ta) x y
-
-  --       --And thus has a center:
-  --       center :  ∀ to ta → (x y : (isChaint to ta)) → (x ≡ y)
-  --       center to ta x y = isContr-eqisChain to ta x y .fst
-
-  --       --Thus the depent type has a center
-  --       center' : ∀ p1 p2 (eq : p1 ≡ p2) (x : isChaint (eq i0 .fst) (eq i0 .snd)) (y : isChaint (eq i1 .fst) (eq i1 .snd)) → PathP ((λ j → (i : ℤ) → (eq j .snd (predℤ i)) <<< (eq j .snd i) ≡ zeroFunc (eq j .fst i) (eq j .fst (predℤ (predℤ i))))) x y
-  --       center' p1 = pathJ _
-  --         λ x y → center (p1 .fst) (p1 .snd) x y
-
-  --       rl : stype2 → stype
-  --       rl est .fst j = est .fst j
-  --       rl est .snd .fst j = est .snd j
-  --       rl est .snd .snd = center' ((A .thisO) , (A .thisA)) ((B .thisO) , (B .thisA)) (λ j → est .fst j , est .snd j) (A .isChain) (B .isChain)
-  --       --lemPropF (λ e → isProp-isChain (e .fst) (e .snd)) (λ i → (est .fst i), (est .snd .fst i)) {b0 = A .isChain} {b1 = B .isChain}
-
-  --       rr : (y : stype2) → lr (rl y) ≡ y
-  --       rr y = refl
-
-  --       isProp-eqisChain : ∀ to ta → (x y : (isChaint to ta)) → isProp (x ≡ y)
-  --       isProp-eqisChain to ta x y = HasLevel+1 ⟨-2⟩ (isContr-eqisChain to ta x y)
-
-  --       -- From an isProp on something dependant, we can get an equality between every dependant equality.
-  --       module Lemma {ℓ} {ℓ'} (A : Set ℓ) (B : A → Set ℓ') (pB : ∀ x → isProp (B x)) where
-
-  --         lemma : (x y : A) → (eq : x ≡ y) → (b0 : B x) (b1 : B y) → (eq1 eq2 : PathP (\ i → B (eq i)) b0 b1) → eq1 ≡ eq2
-  --         lemma x = pathJ _ \ b0 b1 → HasLevel+1 ⟨-2⟩ (hasLevelPath ⟨-2⟩ (pB x) b0 b1)
-        
-  --       ll : (x : stype) → rl (lr x) ≡ x
-  --       ll x j .fst = x .fst
-  --       ll x j .snd .fst i = x .snd .fst i
-  --       ll est j .snd .snd = (begin    --Actually all the proofs are equals...
-  --         ((rl (lr est)) .snd .snd) ≡⟨ Lemma.lemma (Σ thisOt (λ eq → thisAt eq)) (λ e → isChaint (e .fst) (e .snd)) (λ e → isProp-isChain (e .fst) (e .snd))
-  --                                                  (A .thisO , A .thisA) (B .thisO , B .thisA) (λ j → (est .fst j) , (est .snd .fst j))
-  --                                                  (A .isChain) (B .isChain)
-  --                                                  (((rl (lr est)) .snd .snd)) ((est .snd .snd)) ⟩
-  --         (est .snd .snd)  ∎) j
+        psB : (fn : (n : ℤ) → Arrow (A .thisO n) (B .thisO n)) → hasSquares ((n : ℤ) → fn (predℤ n) <<< A .thisA n ≡ B .thisA n <<< fn n)
+        psB fn = isSet-square (setPi λ x → propSet (catZ .arrowsAreSets (fn (predℤ x) <<< A .thisA x) (B .thisA x <<< fn x)))
         
 
-  --       lemma2 : stype ≃ stype2
+    ChainComplexCategory .isCategory .univalent {A} {B} = {!univalenceFrom≃ !} --univalenceFrom≃ (transEq (transEq lemma1 lemma2) lemma3)
+      --univalenceFrom≃ (transEq (transEq lemma1 lemma2) lemma3)
+      --transEq (transEq lemma1 lemma2) lemma3 .snd
+      where
+
+
+        -- Lemma 1.
+        ---
+        ---
         
-  --       lemma2 .fst = lr
-  --       lemma2 .snd = gradLemma lr rl rr ll
+        stype = Σ (A .thisO ≡ B .thisO) (λ eq → Σ ((λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ]) (λ eq' → ((λ j → (i : ℤ) → (eq' j) (predℤ i) <<< (eq' j) i ≡ zeroFunc (eq j i) (eq j (predℤ (predℤ i)))) [ A .isChain ≡ B .isChain ])) )
 
+        lr1 = (λ w → (λ j p → (w j) .thisO p) , ((λ j p → (w j) .thisA p) , λ j i → (w j) .isChain i)) --w for witness
+        rl1 = λ esig j → record { thisO = esig .fst j ; thisA = esig .snd .fst j ; isChain = esig .snd .snd j }
 
-  --       open Tilde catZ
+        ll1 = λ (x : A ≡ B) → refl
 
-
-  --       At : ptype
-  --       At = (A .thisO) , (A .thisA)
-
-  --       Bt : ptype
-  --       Bt = (B .thisO) , (B .thisA)
+        rr1 = λ (y : stype) → refl
         
-  --       stype3 : Set (ℓ-max ℓa ℓb)
-  --       stype3 = At ≡ Bt
-
-  --       f23 : stype2 → stype3
-  --       f23 st2 = λ j → (st2 .fst j) , (st2 .snd j)
-
-  --       f32 : stype3 → stype2
-  --       f32 st3 = (λ j → st3 j .fst) , (λ j → st3 j .snd)
-
-  --       f33 : ∀ t → f23 (f32 t) ≡ t
-  --       f33 t = refl
-
-  --       f22 : ∀ t → f32 (f23 t) ≡ t
-  --       f22 t = refl
+        lemma1 : (A ≡ B) ≃ stype
         
-  --       lemma3 : stype2 ≃ stype3
-  --       lemma3 .fst = f23
-  --       lemma3 .snd = gradLemma f23 f32 f33 f22
+        lemma1 .fst = lr1
+        lemma1 .snd = gradLemma lr1 rl1 rr1 ll1
 
-  --       ---
-  --       ---
-
-  --       open import Cat.Category.Functor
-
-  --       stype4 : Set (ℓ-max ℓa ℓb)
-  --       stype4 = (~o At) ≡ (~o Bt)
-
-  --       g34 : stype3 → stype4
-  --       g34 st3 = λ j → ~o (st3 j)
-
-  --       ~r : (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object → ptype
-  --       ~r funct = (funct .Functor.raw .RawFunctor.omap) , (λ i → funct .Functor.raw .RawFunctor.fmap {A = i} {B = predℤ i} (lemmaInf i))
-
-  --       lmWtf : ∀ t → ~r (~o t) ≡ t
-  --       lmWtf t = λ j → (refl j) , {!!}
-
-  --       g43 : stype4 → stype3
-  --       g43 st4 = λ j → (~r (st4 j) .fst) , {!~r (st4 j) .snd!} -- ~r (st4 j)
-
-  --       -- g44 : ∀ t → g34 (g43 t) ≡ t
-  --       -- g44 t = {!!}
-
-  --       -- g33 : ∀ t → g43 (g34 t) ≡ t
-  --       -- g33 t = {!!}
+        -- Lemma 2.
+        ---
+        ---
         
-  --       -- lemma4 : stype3 ≃ stype4
-  --       -- lemma4 .fst = g34
-  --       -- lemma4 .snd = gradLemma g34 g43 g44 g33 
+        stype2 =  Σ (A .thisO ≡ B .thisO) (λ eq → (λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ])
 
+        lr : stype → stype2
+        lr esig .fst j = esig .fst j
+        lr esig .snd j = esig .snd .fst j
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  --       -- -- -- Lemma X actually....
-  --       -- -- ---
-  --       -- -- ---
-
-  --       -- -- LemmaY : {A : ChainComplex ℓa ℓb {cat = catZ}} (B : ChainComplex ℓa ℓb {cat = catZ}) (p : A ≡ B)  → transp (λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (p j) (p j)) idChainMap ≡ idChainMap 
-  --       -- -- LemmaY = pathJ _ (transp-refl idChainMap)
 
         
-  --       -- -- toEq : stype2 → (raw ChainComplexCategory RawCategory.≊ A) B
-
-  --       -- -- ---- Construct an Arrow from A to B (so a ChainMap)
-  --       -- -- --stype2 =  Σ (A .thisO ≡ B .thisO) (λ eq → (λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ])
-
-  --       -- -- toEq eg .fst =
-  --       -- --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
-  --       -- --   transp (λ i → ChainMap A (equal i)) idChainMap
-
-  --       -- -- toEq eg .snd .fst = 
-  --       -- --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
-  --       -- --   transp (λ i → ChainMap (equal i) A) idChainMap  -- Alt : | ChainMap B ((sym equal) i)) idChainMap
-
-  --       -- -- toEq eg .snd .snd .fst =
+        thisOt = ℤ → (catZ .Object)
         
-  --       -- --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
-  --       -- --   begin
+        thisAt : (to : thisOt) → Set ℓb
+        thisAt = λ to → (i : ℤ) → Arrow (to i) (to (predℤ i))
+
+        isChaint : (to : ℤ → (catZ .Object)) (ta : (i : ℤ) → Arrow (to i) (to (predℤ i))) → Set ℓb
+        isChaint to ta = (i : ℤ) → (ta (predℤ i)) <<< (ta i) ≡ zeroFunc (to i) (to (predℤ (predℤ i)))
+
+
+
+        -- Proving that isChain is a proposition.
+        isProp-isChain : ∀ to ta → isProp (isChaint to ta)
+        isProp-isChain to ta = propPi λ p → catZ .arrowsAreSets ((ta (predℤ p) <<< ta p)) (zeroFunc (to p) (to (predℤ (predℤ p))))
+
+        --The equality is thus contractible :
+        isContr-eqisChain :  ∀ to ta → (x y : (isChaint to ta)) → isContr (x ≡ y)
+        isContr-eqisChain to ta x y = hasLevelPath ⟨-2⟩ (isProp-isChain to ta) x y
+
+        --And thus has a center:
+        center :  ∀ to ta → (x y : (isChaint to ta)) → (x ≡ y)
+        center to ta x y = isContr-eqisChain to ta x y .fst
+
+        --Thus the depent type has a center
+        center' : ∀ p1 p2 (eq : p1 ≡ p2) (x : isChaint (eq i0 .fst) (eq i0 .snd)) (y : isChaint (eq i1 .fst) (eq i1 .snd)) → PathP ((λ j → (i : ℤ) → (eq j .snd (predℤ i)) <<< (eq j .snd i) ≡ zeroFunc (eq j .fst i) (eq j .fst (predℤ (predℤ i))))) x y
+        center' p1 = pathJ _
+          λ x y → center (p1 .fst) (p1 .snd) x y
+
+        rl : stype2 → stype
+        rl est .fst j = est .fst j
+        rl est .snd .fst j = est .snd j
+        rl est .snd .snd = center' ((A .thisO) , (A .thisA)) ((B .thisO) , (B .thisA)) (λ j → est .fst j , est .snd j) (A .isChain) (B .isChain)
+        --lemPropF (λ e → isProp-isChain (e .fst) (e .snd)) (λ i → (est .fst i), (est .snd .fst i)) {b0 = A .isChain} {b1 = B .isChain}
+
+        rr : (y : stype2) → lr (rl y) ≡ y
+        rr y = refl
+
+        isProp-eqisChain : ∀ to ta → (x y : (isChaint to ta)) → isProp (x ≡ y)
+        isProp-eqisChain to ta x y = HasLevel+1 ⟨-2⟩ (isContr-eqisChain to ta x y)
+
+        -- From an isProp on something dependant, we can get an equality between every dependant equality.
+        module Lemma {ℓ} {ℓ'} (A : Set ℓ) (B : A → Set ℓ') (pB : ∀ x → isProp (B x)) where
+
+          lemma : (x y : A) → (eq : x ≡ y) → (b0 : B x) (b1 : B y) → (eq1 eq2 : PathP (\ i → B (eq i)) b0 b1) → eq1 ≡ eq2
+          lemma x = pathJ _ \ b0 b1 → HasLevel+1 ⟨-2⟩ (hasLevelPath ⟨-2⟩ (pB x) b0 b1)
         
-  --       -- --    RawCategory._<<<_ (raw ChainComplexCategory)
-  --       -- --   (transp (λ i →  ChainMap (equal i) A) idChainMap)
-  --       -- --   (transp (λ i → ChainMap A (equal i)) idChainMap)
+        ll : (x : stype) → rl (lr x) ≡ x
+        ll x j .fst = x .fst
+        ll x j .snd .fst i = x .snd .fst i
+        ll est j .snd .snd = (begin    --Actually all the proofs are equals...
+          ((rl (lr est)) .snd .snd) ≡⟨ Lemma.lemma (Σ thisOt (λ eq → thisAt eq)) (λ e → isChaint (e .fst) (e .snd)) (λ e → isProp-isChain (e .fst) (e .snd))
+                                                   (A .thisO , A .thisA) (B .thisO , B .thisA) (λ j → (est .fst j) , (est .snd .fst j))
+                                                   (A .isChain) (B .isChain)
+                                                   (((rl (lr est)) .snd .snd)) ((est .snd .snd)) ⟩
+          (est .snd .snd)  ∎) j
+        
 
-  --       -- --     ≡⟨ lemmaX (ChainComplexCategory .raw) A refl B equal A refl idChainMap idChainMap ⟩
+        lemma2 : stype ≃ stype2
+        
+        lemma2 .fst = lr
+        lemma2 .snd = gradLemma lr rl rr ll
 
-  --       -- --    transp (λ j → ChainMap A A) ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap)
 
-  --       -- --    ≡⟨ transp-refl ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap) ⟩ --isIdentity idChainMap and transp-iso
+        open Tilde
 
-  --       -- --    ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap)
 
-  --       -- --    ≡⟨ (isPreCategory (isCategory ChainComplexCategory)) .isIdentity .fst ⟩ --isIdentity idChainMap and transp-iso
+        At : ptype
+        At = (A .thisO) , (A .thisA)
 
-  --       -- --   identity (raw ChainComplexCategory)  ∎
+        Bt : ptype
+        Bt = (B .thisO) , (B .thisA)
+        
+        stype3 : Set (ℓ-max ℓa ℓb)
+        stype3 = At ≡ Bt
+
+        f23 : stype2 → stype3
+        f23 st2 = λ j → (st2 .fst j) , (st2 .snd j)
+
+        f32 : stype3 → stype2
+        f32 st3 = (λ j → st3 j .fst) , (λ j → st3 j .snd)
+
+        f33 : ∀ t → f23 (f32 t) ≡ t
+        f33 t = refl
+
+        f22 : ∀ t → f32 (f23 t) ≡ t
+        f22 t = refl
+        
+        lemma3 : stype2 ≃ stype3
+        lemma3 .fst = f23
+        lemma3 .snd = gradLemma f23 f32 f33 f22
+
+        ---
+        ---
+
+        open import Cat.Category.Functor
+
+        module ~equiv where
+
+          Func = (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object 
+
+          open Cat.Category.Functor.RawFunctor
+          open Cat.Category.Functor
           
-  --       -- -- toEq eg .snd .snd .snd =
-  --       -- --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
-  --       -- --   begin
-  --       -- --     RawCategory._<<<_ (raw ChainComplexCategory)
-  --       -- --     (transp (λ i → ChainMap A (equal i)) idChainMap)
-  --       -- --     (transp (λ i → ChainMap (equal i) A) idChainMap)
+          ~r : Func → ptype
+          ~r funct = (funct .Functor.raw .omap) , (λ i → funct .Functor.raw .fmap {A = i} {B = predℤ i} (lemmaInf i))
+
+          FtoP : Func → ptype 
+          FtoP = ~r
+          
+          PtoF : ptype → Func
+          PtoF = ~o
+
+          -- ? ≡⟨ ? ⟩ ?
+          FtoF : ∀ t → PtoF (FtoP t) ≡ t
+          
+          omap (Functor.raw (FtoF t j)) n = (begin
+            PtoF (FtoP t) .Functor.raw .omap n ≡⟨⟩
+            (FtoP t) .fst n                    ≡⟨⟩
+            t .Functor.raw .omap n ∎) j
+
+          fmap (Functor.raw (FtoF t j)) {A} {B} b≤a = (begin
+            let k = ineq-cmp-onpred b≤a .fst
+                pk = ineq-cmp-onpred b≤a .snd
+            in
+            PtoF (FtoP t) .Functor.raw .fmap b≤a ≡⟨⟩
+            (transp (λ i → Arrow ((FtoP t) .fst A) ((FtoP t) .fst (pk i))) (n-arrow (FtoP t) k A)) ≡⟨⟩
+            let omap = t .Functor.raw .omap
+            in
+            (transp (λ i → Arrow (omap A) (omap (pk i))) (n-arrow (FtoP t) k A)) ≡⟨ {!!} ⟩
             
-  --       -- --       ≡⟨ lemmaX (ChainComplexCategory .raw) B equal A refl B equal idChainMap idChainMap ⟩
+            t .Functor.raw .fmap b≤a ∎) j
+               
+          
+          -- Arrows are Sets so should be 'trivial' ...
+          IsFunctor.isIdentity (Functor.isFunctor (FtoF t j)) = {!!}
+          IsFunctor.isDistributive (Functor.isFunctor (FtoF t j)) = {!!}
 
-  --       -- --     transp
-  --       -- --       (λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (equal j) (equal j))
-  --       -- --       (RawCategory._<<<_ (ChainComplexCategory .raw) idChainMap idChainMap)
 
-  --       -- --       ≡⟨ ((isPreCategory (isCategory ChainComplexCategory)) .isIdentity {f = idChainMap} .fst <| λ x → transp ((λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (equal j) (equal j))) x) ⟩
+          PtoP : ∀ t → FtoP (PtoF t) ≡ t
+          PtoP t = λ j →
+            (refl {x = t .fst} j) ,
+            λ k → (begin
+              let n = ineq-cmp-onpred (lemmaInf k) .fst
+                  pn = ineq-cmp-onpred (lemmaInf k) .snd
+                  pn1 = ineq-cmp-onInf k -- Type n ≡ (suc 0)
+              in
+              ~o t .Functor.raw .fmap {A = k} {B = predℤ k} (lemmaInf k)        ≡⟨⟩
+              transp (λ i → Arrow (t .fst k) (t .fst (pn i))) (n-arrow t n k)   ≡⟨ {!!} ⟩
+              (n-arrow t (suc 0) k)                                             ≡⟨ n-arrow-coin t k ⟩ -- n-arrow-coin state that one steps give you back what you want
+              t .snd k ∎) j
+          
+
+          lemma4 : (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object ≃ ptype
+          lemma4 .fst = FtoP
+          lemma4 .snd = gradLemma FtoP PtoF PtoP FtoF 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        -- -- Lemma ??? actually....
+        -- ---
+        -- ---
+
+        -- LemmaY : {A : ChainComplex ℓa ℓb {cat = catZ}} (B : ChainComplex ℓa ℓb {cat = catZ}) (p : A ≡ B)  → transp (λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (p j) (p j)) idChainMap ≡ idChainMap 
+        -- LemmaY = pathJ _ (transp-refl idChainMap)
+
+        
+        -- toEq : stype2 → (raw ChainComplexCategory RawCategory.≊ A) B
+
+        -- ---- Construct an Arrow from A to B (so a ChainMap)
+        -- --stype2 =  Σ (A .thisO ≡ B .thisO) (λ eq → (λ j → (p : ℤ) → Arrow (eq j p) (eq j (predℤ p)))[ A .thisA ≡ B .thisA ])
+
+        -- toEq eg .fst =
+        --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
+        --   transp (λ i → ChainMap A (equal i)) idChainMap
+
+        -- toEq eg .snd .fst = 
+        --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
+        --   transp (λ i → ChainMap (equal i) A) idChainMap  -- Alt : | ChainMap B ((sym equal) i)) idChainMap
+
+        -- toEq eg .snd .snd .fst =
+        
+        --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
+        --   begin
+        
+        --    RawCategory._<<<_ (raw ChainComplexCategory)
+        --   (transp (λ i →  ChainMap (equal i) A) idChainMap)
+        --   (transp (λ i → ChainMap A (equal i)) idChainMap)
+
+        --     ≡⟨ lemmaX (ChainComplexCategory .raw) A refl B equal A refl idChainMap idChainMap ⟩
+
+        --    transp (λ j → ChainMap A A) ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap)
+
+        --    ≡⟨ transp-refl ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap) ⟩ --isIdentity idChainMap and transp-iso
+
+        --    ((RawCategory._<<<_ (raw ChainComplexCategory)) idChainMap idChainMap)
+
+        --    ≡⟨ (isPreCategory (isCategory ChainComplexCategory)) .isIdentity .fst ⟩ --isIdentity idChainMap and transp-iso
+
+        --   identity (raw ChainComplexCategory)  ∎
+          
+        -- toEq eg .snd .snd .snd =
+        --   let equal = (inverse lemma1 (inverse (lemma2) eg)) in
+        --   begin
+        --     RawCategory._<<<_ (raw ChainComplexCategory)
+        --     (transp (λ i → ChainMap A (equal i)) idChainMap)
+        --     (transp (λ i → ChainMap (equal i) A) idChainMap)
+            
+        --       ≡⟨ lemmaX (ChainComplexCategory .raw) B equal A refl B equal idChainMap idChainMap ⟩
+
+        --     transp
+        --       (λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (equal j) (equal j))
+        --       (RawCategory._<<<_ (ChainComplexCategory .raw) idChainMap idChainMap)
+
+        --       ≡⟨ ((isPreCategory (isCategory ChainComplexCategory)) .isIdentity {f = idChainMap} .fst <| λ x → transp ((λ j → (RawCategory.Arrow (ChainComplexCategory .raw)) (equal j) (equal j))) x) ⟩
               
-  --       -- --     transp
-  --       -- --       (λ j →
-  --       -- --          RawCategory.Arrow (ChainComplexCategory .raw)
-  --       -- --          (equal j)
-  --       -- --          (equal j))
-  --       -- --       (idChainMap)
+        --     transp
+        --       (λ j →
+        --          RawCategory.Arrow (ChainComplexCategory .raw)
+        --          (equal j)
+        --          (equal j))
+        --       (idChainMap)
 
-  --       -- --       ≡⟨ LemmaY B equal ⟩
+        --       ≡⟨ LemmaY B equal ⟩
 
-  --       -- --     identity (raw ChainComplexCategory) ∎
+        --     identity (raw ChainComplexCategory) ∎
 
         
-  --       -- -- postulate a : (eq : Σ (RawCategory.Arrow (raw ChainComplexCategory) A B)
-  --       -- --                       (RawCategory.Isomorphism (raw ChainComplexCategory))) → _
+        -- postulate a : (eq : Σ (RawCategory.Arrow (raw ChainComplexCategory) A B)
+        --                       (RawCategory.Isomorphism (raw ChainComplexCategory))) → _
 
-  --       -- -- eqTo : (raw ChainComplexCategory RawCategory.≊ A) B → stype2
-  --       -- -- eqTo eq .fst = funExt λ x →
-  --       -- --   let F = inverse ((idToIso (A .thisO x) (B .thisO x)) , (catZ .univalent {A = (A .thisO x)} {B = (B .thisO x)}))
-  --       -- --       f = eq .fst .fn x
-  --       -- --       g = eq .snd .fst .fn x
+        -- eqTo : (raw ChainComplexCategory RawCategory.≊ A) B → stype2
+        -- eqTo eq .fst = funExt λ x →
+        --   let F = inverse ((idToIso (A .thisO x) (B .thisO x)) , (catZ .univalent {A = (A .thisO x)} {B = (B .thisO x)}))
+        --       f = eq .fst .fn x
+        --       g = eq .snd .fst .fn x
 
-  --       -- --       idL : g <<< f ≡ catZ .identity
-  --       -- --       idL = λ i → toSig (eq .snd .snd .fst) .fst i x
+        --       idL : g <<< f ≡ catZ .identity
+        --       idL = λ i → toSig (eq .snd .snd .fst) .fst i x
               
-  --       -- --       idR : f <<< g ≡ catZ .identity
-  --       -- --       idR = λ i → toSig (eq .snd .snd .snd) .fst i x
-  --       -- --   in F (f , (g , (idL , idR)))
-  --       -- --   where
-  --       -- --     toSig : ∀ {c1 c2} → {C D : ChainMap c1 c2} (p : (C ≡ D)) → (Σ (C .fn ≡ D .fn) (λ eq → (λ j → (p : ℤ) → (eq j) (predℤ p) <<< c1 .thisA p ≡ c2 .thisA p <<< (eq j) p )[ C .commute ≡ D .commute ]))
-  --       -- --     toSig p = (λ j n → p j .fn n) , λ j n → p j .commute n
+        --       idR : f <<< g ≡ catZ .identity
+        --       idR = λ i → toSig (eq .snd .snd .snd) .fst i x
+        --   in F (f , (g , (idL , idR)))
+        --   where
+        --     toSig : ∀ {c1 c2} → {C D : ChainMap c1 c2} (p : (C ≡ D)) → (Σ (C .fn ≡ D .fn) (λ eq → (λ j → (p : ℤ) → (eq j) (predℤ p) <<< c1 .thisA p ≡ c2 .thisA p <<< (eq j) p )[ C .commute ≡ D .commute ]))
+        --     toSig p = (λ j n → p j .fn n) , λ j n → p j .commute n
 
-  --       -- -- eqTo eq .snd = a eq
-  --       -- -- --eqTo eq .snd j p = {!(a p eq) j!}
+        -- eqTo eq .snd = a eq
+        -- --eqTo eq .snd j p = {!(a p eq) j!}
 
 
         
-  --       -- -- eqEq : (y : (raw ChainComplexCategory RawCategory.≊ A) B) → toEq (eqTo y) ≡ y
-  --       -- -- eqEq y j .fst = {!!}
-  --       -- -- eqEq y j .snd = {!!}
+        -- eqEq : (y : (raw ChainComplexCategory RawCategory.≊ A) B) → toEq (eqTo y) ≡ y
+        -- eqEq y j .fst = {!!}
+        -- eqEq y j .snd = {!!}
 
-  --       -- -- toTo : (x : stype2) → eqTo (toEq x) ≡ x
-  --       -- -- toTo x j .fst = {!x .fst i p!}
-  --       -- -- toTo x j .snd = {!!}
+        -- toTo : (x : stype2) → eqTo (toEq x) ≡ x
+        -- toTo x j .fst = {!x .fst i p!}
+        -- toTo x j .snd = {!!}
 
-  --       -- -- lemma3 : stype2 ≃ ((raw ChainComplexCategory RawCategory.≊ A) B)
+        -- lemma3 : stype2 ≃ ((raw ChainComplexCategory RawCategory.≊ A) B)
 
-  --       -- -- lemma3 .fst = toEq
-  --       -- -- lemma3 .snd = gradLemma toEq eqTo eqEq toTo
-
-
+        -- lemma3 .fst = toEq
+        -- lemma3 .snd = gradLemma toEq eqTo eqEq toTo
 
 
 
@@ -542,59 +575,61 @@ module Cat.Instance.ChainComplexCategory where
 
 
 
-  --       -- -- -- -- -- Proof that A ≡ B with an element of stype
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .thisO p   = esig .fst j p
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .thisA p   = esig .snd .fst j p
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .isChain p = esig .snd .snd j p
 
 
-  --       -- -- -- -- -- The fiber thingy...
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .fst .snd = refl
+        -- -- -- -- Proof that A ≡ B with an element of stype
+        -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .thisO p   = esig .fst j p
+        -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .thisA p   = esig .snd .fst j p
+        -- -- -- lemma1 .snd .equiv-proof esig .fst .fst j .isChain p = esig .snd .snd j p
 
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y  = {!!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst = {!fiber!} 
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .thisO p = {!!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .thisA p = {!!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .isChain p = {!!}
+
+        -- -- -- -- The fiber thingy...
+        -- -- -- lemma1 .snd .equiv-proof esig .fst .snd = refl
+
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y  = {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst = {!fiber!} 
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .thisO p = {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .thisA p = {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .fst i .isChain p = {!!}
         
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd = {!begin ?!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .fst = λ x x₁ → {!!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .snd .fst k p = {!!}
-  --       -- -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .snd .snd k p l = {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd = {!begin ?!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .fst = λ x x₁ → {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .snd .fst k p = {!!}
+        -- -- -- lemma1 .snd .equiv-proof esig .snd y j .snd i .snd .snd k p l = {!!}
 
 
-  --       -- -- -- -- -- --- Proof of lemma 2
-  --       -- -- -- -- -- ---
-  --       -- -- -- -- -- lemma2 : stype ≃ stype2 --We can get rid of the second part.
-  --       -- -- -- -- -- lemma2 .fst esig .fst j p = esig .fst j p
-  --       -- -- -- -- -- lemma2 .fst esig .snd j p = esig .snd .fst j p
+        -- -- -- -- --- Proof of lemma 2
+        -- -- -- -- ---
+        -- -- -- -- lemma2 : stype ≃ stype2 --We can get rid of the second part.
+        -- -- -- -- lemma2 .fst esig .fst j p = esig .fst j p
+        -- -- -- -- lemma2 .fst esig .snd j p = esig .snd .fst j p
 
-  --       -- -- -- -- -- --The is-equiv part
+        -- -- -- -- --The is-equiv part
 
-  --       -- -- -- -- -- -- fiber (fst lemma2) esig2
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .fst j p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .snd .fst j p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .snd .snd j p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .snd j .fst i p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .snd j .snd i p = {!!}
+        -- -- -- -- -- fiber (fst lemma2) esig2
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .fst j p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .snd .fst j p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .fst .snd .snd j p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .snd j .fst i p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .fst .snd j .snd i p = {!!}
 
-  --       -- -- -- -- -- --(y : fiber (fst lemma2) esig2) → fst (lemma2 .snd .equiv-proof esig2) ≡ y
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .fst i p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .snd .fst = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .snd .snd = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .snd x .fst i p = {!!}
-  --       -- -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .snd x .snd i p = {!!}
-
-
+        -- -- -- -- --(y : fiber (fst lemma2) esig2) → fst (lemma2 .snd .equiv-proof esig2) ≡ y
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .fst i p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .snd .fst = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .fst .snd .snd = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .snd x .fst i p = {!!}
+        -- -- -- -- lemma2 .snd .equiv-proof esig2 .snd fib j .snd x .snd i p = {!!}
 
 
-  --       -- -- -- -- -- -- --- Proof of lemma 3
-  --       -- -- -- -- -- -- ---
-  --       -- -- -- -- -- -- lemma3 : {!!} --We use the fact that catZ is univalent to proove that the equality between thisO is an equivalence - Same for thisA
-  --       -- -- -- -- -- -- lemma3 = {!!}
 
-  --       -- -- -- -- -- -- lemma4 : {!!} -- We do everythin in reverse
-  --       -- -- -- -- -- -- lemma4 = {!!}
+
+        -- -- -- -- -- --- Proof of lemma 3
+        -- -- -- -- -- ---
+        -- -- -- -- -- lemma3 : {!!} --We use the fact that catZ is univalent to proove that the equality between thisO is an equivalence - Same for thisA
+        -- -- -- -- -- lemma3 = {!!}
+
+        -- -- -- -- -- lemma4 : {!!} -- We do everythin in reverse
+        -- -- -- -- -- lemma4 = {!!}
         
 
     
