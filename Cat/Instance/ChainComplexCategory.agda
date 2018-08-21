@@ -19,7 +19,7 @@ module Cat.Instance.ChainComplexCategory where
   open import Cubical.FromStdLib using (ℓ-max)
 
   open import Cat.Instance.NatLemmas
-  open import Data.Nat.Base hiding (_⊔_ ; _^_)
+  open import Data.Nat.Base hiding (_⊔_ ; _^_) renaming (_+_ to _+ℕ_)
   open import Data.Integer.Base hiding (_⊔_) renaming (suc to sucℤ) renaming (pred to predℤ) renaming (+_ to pos) renaming (-[1+_] to negsuc)
 
   import Data.Integer.Properties as Ip
@@ -29,6 +29,8 @@ module Cat.Instance.ChainComplexCategory where
 
   open import Cat.Categories.Fun
   open import Cat.Categories.Opposite
+
+  import Agda.Builtin.Equality as AE
 
   module ChainMapM (ℓa ℓb : Level) (catZ : ZeroCategory ℓa ℓb) where
 
@@ -98,6 +100,50 @@ module Cat.Instance.ChainComplexCategory where
       -- State that it coincide on what you want.
       n-arrow-coin : (p : ptype) (i : ℤ) → n-arrow p (suc 0) i ≡ (p .snd i)
       n-arrow-coin p i = isIdentity .snd
+      
+
+      --transp (λ j → Arrow (p .fst i) (p .fst ((^-+ predℤ nba ncb j) i))) (n-arrow p (nba +ℕ ncb) i)
+      ---- (predℤ ^ nca) A ≡ (predℤ ^ ncb) ((predℤ ^ nba) A)
+      --
+      n-arrow-+ : (p : ptype) (ncb nba : ℕ) (A : ℤ) → transp (λ j → Arrow (p .fst A) (p .fst ((^-+ predℤ ncb nba j) A))) (n-arrow p (ncb +ℕ nba) A) ≡
+                                                      (n-arrow p ncb ((predℤ ^ nba) A)) <<< (n-arrow p nba A)
+      n-arrow-+ p zero m i    = begin
+        transp (λ j → Arrow (p .fst i) (p .fst ((predℤ ^ m) i))) (n-arrow p m i) ≡⟨ transp-refl (n-arrow p m i) ⟩
+        n-arrow p m i ≡⟨ isIdentity .fst >| sym ⟩
+        identity <<< n-arrow p m i ∎
+
+      n-arrow-+ p (suc n) m i = begin
+        transp (λ j → Arrow (p .fst i) (p .fst (^-+ predℤ (suc n) m j i))) (n-arrow p (suc n +ℕ m) i) ≡⟨⟩
+        -- Obtained by Ctrl.C / Ctrl.S
+        transp
+          (λ j →
+            Arrow (p .fst i)
+                  (p .fst
+                    (((λ a → predℤ ((predℤ ^ (n +ℕ m)) a)) ≡⟨
+                    (λ i₁ a → predℤ (^-+ predℤ n m i₁ a)) ⟩
+                    (λ _ a → predℤ ((predℤ ^ n) ((predℤ ^ m) a))))
+                    j i))) (p .snd ((predℤ ^ (n +ℕ m)) i) <<< n-arrow p (n +ℕ m) i) ≡⟨ {!(n-arrow-+!} ⟩
+
+      --(predℤ ^ (n +ℕ m)) i ≡ ((predℤ ^ n) ((predℤ ^ m) i)) by (^-+ predℤ n m)
+      -- n-arrow p (n +ℕ m) i ≡ n-arrow p n ((predℤ ^ m) i) <<< n-arrow p m i BY n-arrow-+ p n m i (Induction hyp)
+
+       {!!} ≡⟨ {!!} ⟩
+       p .snd ((predℤ ^ n) ((predℤ ^ m) i)) <<<  n-arrow p n ((predℤ ^ m) i) <<< n-arrow p m i ∎
+
+
+
+--       n-arrow-+link : (p : ptype) (ncb nba nca : ℕ) (A : ℤ) (pnca : (predℤ ^ nca) A ≡ (predℤ ^ ncb) ((predℤ ^ nba) A)) → transp (λ j → Arrow (p .fst A) (p .fst (pnca j))) (n-arrow p nca A) ≡ (n-arrow p ncb ((predℤ ^ nba) A)) <<< (n-arrow p nba A)
+      
+--       n-arrow-+link p zero nba nca A pnca = begin
+--         transp (λ j → Arrow (p .fst A) (p .fst (pnca j))) (n-arrow p nca A) ≡⟨ {!(fromPathP \ i → n-arrow t (pn1 i) k)!} ⟩
+--         n-arrow p nba A ≡⟨ isIdentity .fst >| sym ⟩
+--         identity <<< n-arrow p nba A ∎
+        
+--       n-arrow-+link p (suc n) nba nca A pnca = begin
+--         let to = p .fst ; ta = p .snd in
+--         transp (λ j → Arrow (to A) (to(pnca j))) (n-arrow p nca A) ≡⟨ {!pnca!} ⟩
+--         ta ((predℤ ^ n) ((predℤ ^ nba) A)) <<< n-arrow p n ((predℤ ^ nba) A) <<< n-arrow p nba A ∎
+
 
       ~o : ptype  → (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object 
 
@@ -118,11 +164,21 @@ module Cat.Instance.ChainComplexCategory where
 
       IsFunctor.isIdentity (Functor.isFunctor (~o pair)) {A}                     = begin
         let id = Category.raw IntCategory .RawCategory.identity
+        
             n = ineq-cmp-onpred {i = A} Ip.≤-refl .fst
             pn = ineq-cmp-onpred {i = A} Ip.≤-refl .snd
+            
+            l : n ≡ 0
+            l = ineq-cmp-onRefl A
         in
-        transp (λ i → Arrow (pair .fst A) (pair .fst (pn i))) (n-arrow pair n A) ≡⟨ {!_<<<_!} ⟩
-        {!!} ∎  
+        transp (λ i → Arrow (pair .fst A) (pair .fst (pn i))) (n-arrow pair n A)
+          ≡⟨ (\ j → transp (λ i → Arrow (pair .fst A) (pair .fst (isSet-ℤ _ _ pn (\ z → ((predℤ ^ ineq-cmp-onRefl A z) A)) j i))) (n-arrow pair n A)) ⟩
+        transp (λ z → Arrow (pair .fst A) (pair .fst ((predℤ ^ ineq-cmp-onRefl A z) A))) (n-arrow pair n A)
+          ≡⟨  fromPathP (\ j → (n-arrow pair (l j) A)) ⟩
+        identity ∎
+        where
+          open IntCategoryM.Lemmas
+        
       IsFunctor.isDistributive (Functor.isFunctor (~o pair)) {A} {B} {C} {b≤a} {c≤b} = begin
         let c≤a = (opposite IntCategory [ c≤b ∘ b≤a ])
             nca = (ineq-cmp-onpred c≤a .fst)
@@ -133,16 +189,46 @@ module Cat.Instance.ChainComplexCategory where
             pnba = ineq-cmp-onpred b≤a .snd
             to = pair .fst
             ta = pair .snd
+            --pnca' : (predℤ ^ fst (ineq-cmp-onpred c≤a)) A ≡ C
         in
-        transp (λ i → Arrow (to A) (to (pnca i))) (n-arrow pair nca A)     ≡⟨ {!!}   ⟩
-        {!(transp (λ j → Arrow (to (pnba (~ j))) (to (pncb j))) (n-arrow pair ncb B)) <<< (n-arrow pair nba A)!}    ≡⟨ sym ({!!}) ⟩
-
-        --(transp (λ j → Arrow (to (pnba (~ j))) (to (pncb j))) (n-arrow pair ncb B)) <<< (n-arrow pair nba A)
+        transp (λ i → Arrow (to A) (to (pnca i))) (n-arrow pair nca A)     ≡⟨ aux {ncb = ncb} {nba = nba} {nca = nca} {A = A} pair B pnba C pncb pnca ⟩
        (transp (λ i → Arrow (to B) (to (pncb i))) (n-arrow pair ncb B)
          <<<
         transp (λ i → Arrow (to A) (to (pnba i))) (n-arrow pair nba A))∎
+        where
+          aux : {ncb nba nca : ℕ} {A : ℤ} (pair : ptype) (B : ℤ) (pnba : (predℤ ^ nba) A ≡ B) (C : ℤ) (pncb : (predℤ ^ ncb) B ≡ C) (pnca : (predℤ ^ nca) A ≡ C) → let to = pair .fst ; ta = pair .snd
+                                       in transp (λ i → Arrow (to A) (to (pnca i))) (n-arrow pair nca A) ≡
+                                         (transp (λ i → Arrow (to B) (to (pncb i))) (n-arrow pair ncb B) <<< transp (λ i → Arrow (to A) (to (pnba i))) (n-arrow pair nba A))
+          
+          aux {ncb} {nba} {nca} {A} pair = pathJ _ (pathJ _ λ pnca → begin
+            let to = pair .fst ; ta = pair .snd
+                padd : nca ≡ ncb +ℕ nba
+                padd = predℤ-^ nba ncb nca A pnca
+                
+                X : predℤ ^ (ncb +ℕ nba) ≡ (λ x → (predℤ ^ ncb) ((predℤ ^ nba) x))
+                X = (^-+ predℤ ncb nba)
+                
+                Y : (predℤ ^ nca) A ≡ (predℤ ^ ncb) ((predℤ ^ nba) A)
+                Y = pnca
 
-------- sym (lemmaX {!(c .Category.raw)!} (to A) refl (to B) (λ i → (to (pnba i))) (to C) (λ i → (to (pncb i))) (n-arrow pair nba A) (n-arrow pair ncb B))
+                G : PathP _ _ _  -- A path between Y and X...
+                G = {!λ j → (predℤ ^ (padd j)) A ≡ ((predℤ ^ ncb) ((predℤ ^ nba) A))!}
+            in --nca = ncb +ℕ nba by predℤ-^ nba ncb nca A pnca
+            transp (λ i → Arrow (to A) (to (pnca i))) (n-arrow pair nca A)
+
+              ≡⟨ {!!} ⟩
+ 
+
+            transp (λ j → Arrow (to A) (to ((^-+ predℤ ncb nba j) A))) (n-arrow pair (ncb +ℕ nba) A)  ≡⟨ (n-arrow-+ pair ncb nba A) ⟩
+            
+            (n-arrow pair ncb ((predℤ ^ nba) A)) <<< (n-arrow pair nba A)  ≡⟨ (\ i → sym (transp-refl (n-arrow pair ncb ((predℤ ^ nba) A))) i <<< sym (transp-refl (n-arrow pair nba A)) i) ⟩
+
+            transp (λ i → Arrow (to ((predℤ ^ nba) A)) (to ((predℤ ^ ncb) ((predℤ ^ nba) A)))) (n-arrow pair ncb ((predℤ ^ nba) A))
+              <<<
+            transp (λ i → Arrow (to A) (to ((predℤ ^ nba) A))) (n-arrow pair nba A) ∎)
+            where
+                open IntCategoryM.Lemmas
+
 
   module ChainComplexCategoryM (ℓa ℓb : Level) (catZ : ZeroCategory ℓa ℓb) where
 
@@ -346,6 +432,16 @@ module Cat.Instance.ChainComplexCategory where
           PtoF : ptype → Func
           PtoF = ~o
 
+
+          isProp-isIdentity : ∀ {la la' lb lb'} {C : Category la la'} {D : Category lb lb'} t → isProp (Functor.IsIdentity {ℂ = C} {𝔻 = D} t)
+          isProp-isIdentity {C = C} {D = D} t x y = {!D .isCategory .IsCategory.isPreCategory .IsPreCategory.arrowsAreSets _ _ x y!}
+
+          isProp-isDistributive : ∀ {la la' lb lb'} {C : Category la la'} {D : Category lb lb'} t → isProp (Functor.IsDistributive {ℂ = C} {𝔻 = D} t)
+          isProp-isDistributive {D = D} t x y = {!D .isCategory .IsCategory.isPreCategory .IsPreCategory.arrowsAreSets _ _ x y!}
+
+          --Not what you want i'm stupid...
+          --Fun.Fun C D .isCategory .IsCategory.isPreCategory .IsPreCategory.arrowsAreSets
+
           -- ? ≡⟨ ? ⟩ ?
           FtoF : ∀ t → PtoF (FtoP t) ≡ t
           
@@ -354,20 +450,46 @@ module Cat.Instance.ChainComplexCategory where
             (FtoP t) .fst n                    ≡⟨⟩
             t .Functor.raw .omap n ∎) j
 
-          fmap (Functor.raw (FtoF t j)) {A} {B} b≤a = (begin
-            let k = ineq-cmp-onpred b≤a .fst
-                pk = ineq-cmp-onpred b≤a .snd
-            in
-            PtoF (FtoP t) .Functor.raw .fmap b≤a ≡⟨⟩
-            (transp (λ i → Arrow ((FtoP t) .fst A) ((FtoP t) .fst (pk i))) (n-arrow (FtoP t) k A)) ≡⟨⟩
-            let omap = t .Functor.raw .omap
-            in
-            (transp (λ i → Arrow (omap A) (omap (pk i))) (n-arrow (FtoP t) k A)) ≡⟨ {!!} ⟩
-            
-            t .Functor.raw .fmap b≤a ∎) j
+          fmap (Functor.raw (FtoF t j)) {A} {B} b≤a = aux {A} {k} _ pk b≤a j
+            where
+              open IntCategoryM.Lemmas
+              
+              k = ineq-cmp-onpred b≤a .fst
+              pk = ineq-cmp-onpred b≤a .snd
+
+              lm : ∀ k A t (b≤a : (predℤ ^ k) A Data.Integer.Base.≤ A) → n-arrow (FtoP t) k A ≡ fmap (Functor.raw t) b≤a
+              lm zero A t b≤a = begin
+                (identity catZ) ≡⟨ t .Functor.isFunctor .IsFunctor.isIdentity >| sym ⟩
+                fmap (Functor.raw t) (Ip.≤-reflexive _) ≡⟨ (isProp-arrow A A _ b≤a <| \ x → fmap (Functor.raw t) x) ⟩
+                fmap (Functor.raw t) b≤a ∎ -- b≤a is of type A <= A...
+                
+              lm (suc n) A t b≤a = begin
+                 n-arrow (FtoP t) (suc n) A ≡⟨⟩
+                 fmap (Functor.raw t) (lemmaInf (((λ i → negsuc 0 + i) ^ n) A)) <<< n-arrow (FtoP t) n A     ≡⟨ (lm n A t (predℤ-inf A n) <| \ x → fmap (Functor.raw t) (lemmaInf (((λ i → negsuc 0 + i) ^ n) A)) <<< x) ⟩
+                 
+                 fmap (Functor.raw t) (lemmaInf (((λ i → negsuc 0 + i) ^ n) A)) <<< fmap (Functor.raw t) (predℤ-inf A n)  ≡⟨ t .Functor.isFunctor .IsFunctor.isDistributive {f = (predℤ-inf A n)} {g = (lemmaInf (((λ i → negsuc 0 + i) ^ n) A))} >| sym ⟩
+                 --
+                 fmap (t .Functor.raw)
+                   (opposite IntCategoryM.IntCategory [
+                    lemmaInf (((λ i → negsuc 0 + i) ^ n) A) ∘ predℤ-inf A n ])
+
+                   ≡⟨ (isProp-arrow _ _ _ b≤a <| \ x → fmap (Functor.raw t) x) ⟩
+                   
+                 fmap (Functor.raw t) b≤a ∎
+              
+              aux : ∀ {A k} B (pk : (predℤ ^ k) A ≡ B) b≤a → (transp (λ i → Arrow (t .Functor.omap A) (t .Functor.omap (pk i))) (n-arrow (FtoP t) k A)) ≡ t .Functor.fmap {A} {B} b≤a
+              aux {A} {k} = pathJ _ \ b≤a →
+                  (begin
+                    transp (λ i → Arrow (Functor.omap t A) (Functor.omap t ((predℤ ^ k) A))) (n-arrow (FtoP t) k A)
+                               ≡⟨ transp-refl (n-arrow (FtoP t) k A) ⟩
+                    (n-arrow (FtoP t) k A) ≡⟨ lm k A t b≤a ⟩ Functor.fmap t b≤a ∎
+                    )
+
                
           
           -- Arrows are Sets so should be 'trivial' ...
+          --
+          --
           IsFunctor.isIdentity (Functor.isFunctor (FtoF t j)) = {!!}
           IsFunctor.isDistributive (Functor.isFunctor (FtoF t j)) = {!!}
 
@@ -379,11 +501,19 @@ module Cat.Instance.ChainComplexCategory where
               let n = ineq-cmp-onpred (lemmaInf k) .fst
                   pn = ineq-cmp-onpred (lemmaInf k) .snd
                   pn1 = ineq-cmp-onInf k -- Type n ≡ (suc 0)
+                  pn' = transp (λ i → (predℤ ^ (pn1 i)) k ≡ predℤ k) pn
               in
               ~o t .Functor.raw .fmap {A = k} {B = predℤ k} (lemmaInf k)        ≡⟨⟩
-              transp (λ i → Arrow (t .fst k) (t .fst (pn i))) (n-arrow t n k)   ≡⟨ {!!} ⟩
-              (n-arrow t (suc 0) k)                                             ≡⟨ n-arrow-coin t k ⟩ -- n-arrow-coin state that one steps give you back what you want
+              transp (λ i → Arrow (t .fst k) (t .fst (pn i)))              (n-arrow t n k)
+
+                ≡⟨ (\ j → transp (λ i → Arrow (t .fst k) (t .fst (isSet-ℤ _ _ pn (\ i → ((predℤ ^ pn1 i) k)) j i))) (n-arrow t n k) ) ⟩
+
+              transp (λ i → Arrow (t .fst k) (t .fst ((predℤ ^ pn1 i) k))) (n-arrow t n k)   ≡⟨ (fromPathP \ i → n-arrow t (pn1 i) k) ⟩
+              (n-arrow t (suc 0) k)                                                          ≡⟨ n-arrow-coin t k ⟩ -- n-arrow-coin state that one steps give you back what you want
               t .snd k ∎) j
+              where
+                open IntCategoryM.Lemmas
+
           
 
           lemma4 : (IntFunc.RevIntFunc catZ) .Category.raw .RawCategory.Object ≃ ptype

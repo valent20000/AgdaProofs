@@ -16,6 +16,16 @@ module Numbers2 where
 
   open import Utils
 
+  {--
+
+    Following the idea stated in the report; we define a path from ℤ to ℤ, that is the +1 path, by using Univalence.
+    For that purpose we use equiToPath : it gives us an equality from an equivalence.
+    To obtain that equivalence we use gradLemma; we must give two functions and proof that they cancel each other.
+
+  --}
+
+  -- The proof is absolutely trivial by definition. (sucℤ (predℤ i) normal form is always i)
+  
   sucPred : ∀ i → sucℤ (predℤ i) ≡ i
   sucPred (pos zero)       = refl
   sucPred (pos (suc n))    = refl
@@ -28,12 +38,19 @@ module Numbers2 where
   predSuc (negsuc zero)    = refl
   predSuc (negsuc (suc n)) = refl
   
-  sucPathℤ : ℤ ≡ ℤ
+  sucPathℤ : ℤ ≡ ℤ -- The +1 path.
   sucPathℤ = equivToPath suc-equiv
     where
       suc-equiv : Σ _ (isEquiv ℤ ℤ)
       suc-equiv .fst = sucℤ
       suc-equiv .snd = gradLemma sucℤ predℤ sucPred predSuc
+
+
+  {--
+    We then define the +n path for n in Nat by induction by concatenating the +1 paths.
+    And then define the general +i path, by stating that it's either +n in a direction or in the other.
+    (An alternative would've been to define a -1 path, and show that -1 +1 path cancel each other etc...)
+  --}
 
 
   -- For natural numbers
@@ -46,6 +63,11 @@ module Numbers2 where
   iPathℤ (pos n) = (nPathℤ n)
   iPathℤ (negsuc n) = sym (nPathℤ (suc n))
 
+
+  {-- We now define our own + operator.
+      The trick is that because it's defined by induction in a way similar to iPathℤ it will be easy to use to make proofs about the iPath. 
+  --}
+  
   infix 10 _+_
   
   _+_ : (a b : ℤ) → ℤ
@@ -56,13 +78,21 @@ module Numbers2 where
 
 
       
+  {-- This lemma is fairly simple : 1 + ... + 1  (n+1) times is the same as
+    1 + (1 + ... + 1) and (1 + ... 1) + 1
 
+    And the proof is, too. By a simple induction.
+
+    But it's fairly interesting : see how it's postulated. The proof below is a valid proof; but typechecking this theorem and proof is actually slow.
+    Fortunately there is a workaround to make things go a bit faster but not much.
+    So when doing proofs, it can be nice to postulate some things and unpostulate them at the end. 
+  --}
+  
   postulate LemmaCommN : (n : ℕ) → trans sucPathℤ (nPathℤ n) ≡ trans (nPathℤ n) sucPathℤ
-
 
   -- LemmaCommN (0) = trans ((trans-id sucPathℤ)) ((sym (trans-id-l sucPathℤ)))
   -- LemmaCommN (suc n) = begin
-  --   trans sucPathℤ (trans sucPathℤ (nPathℤ n)) ≡⟨ cong (λ x → trans sucPathℤ x) (LemmaCommN n) ⟩
+  --   trans sucPathℤ (trans sucPathℤ (nPathℤ n)) ≡⟨ (LemmaCommN n) <| (λ x → trans sucPathℤ x) ⟩
   --   trans sucPathℤ (trans (nPathℤ n) sucPathℤ) ≡⟨ trans-assoc {p = sucPathℤ} {q = (nPathℤ n)} {r = sucPathℤ} ⟩
   --   (trans (trans sucPathℤ (nPathℤ n)) sucPathℤ) ∎
   --
@@ -72,31 +102,42 @@ module Numbers2 where
   LemmaSucP (pos 0) = refl
   LemmaSucP (negsuc 0) = refl
   
-  -- Notice here that we use ElimComp. Unfortunately, the way the computations are done add 'parasites' composition along a trivial path inside the terms. I made ElimComp to get rid of those easily. In the future, it would be really nice to have a sort of 'tactic'
-  
+  -- Notice here that we use ElimComp. Unfortunately, the way the computations are done add 'parasites' composition along a trivial path inside the terms (look at the normal forms). I made ElimComp to get rid of those easily. In the future, it would be really nice to have a sort of 'tactic' to do that.
+
+{-- Here is an example of such parasites :
+
+pos
+(suc
+ (suc
+  (primComp (λ i → ℕ) i0 (λ i → empty)
+   (primComp (λ i → ℕ) i0 (λ i → empty)
+    (primComp (λ i → ℕ) i0 (λ i → empty) n)))))
+
+--}
+
   LemmaSucP (pos (suc n)) = ElimComp 3 n <| λ x → pos (suc (suc x))
   LemmaSucP (negsuc (suc n)) = ElimComp 3 n <| λ x → negsuc x
 
-  LemmaIP : (i x : ℤ) → transp (λ j → (iPathℤ i) j) x ≡ x + i
-  LemmaIP (pos 0) x = transp-refl x
-  
-  LemmaIP (negsuc 0) x = let A = ElimComp 4 (predℤ ((empCmp ^ 3) x)) ; B = ElimComp 3 x <| (λ e → predℤ e) in λ j → trans A B j
 
+  -- We now prove that transporting along +i is the same as adding i with our operator.
+  
+  LemmaIP : (i x : ℤ) → transp (λ j → (iPathℤ i) j) x ≡ x + i
+
+  -- Fairly simple; transporting x along refl gives x + (pos ) ie x ...
+  LemmaIP (pos 0) x = transp-refl x
+  LemmaIP (negsuc 0) x = let A = ElimComp 4 (predℤ ((empCmp ^ 3) x)) ; B = ElimComp 3 x <| (λ e → predℤ e) in λ j → trans A B j
+  
   LemmaIP (pos (suc n)) x = begin
     transp (λ j → trans sucPathℤ (nPathℤ n) j) x              ≡⟨ (LemmaCommN n <| λ e → transp (λ j → e j) x ) ⟩
-    
-    -- We state that going along the path +1 the same as going +n +1.
-    
     transp (λ j → trans (nPathℤ n) sucPathℤ j) x              ≡⟨ transpOfTrans ℤ (nPathℤ n) ℤ sucPathℤ ⟩
-
+    -- transp along two concatenated path is the same as two succesive transp.
     
-
     transp (λ j → sucPathℤ j) (transp (λ j → (nPathℤ n) j) x) ≡⟨ ( LemmaIP (pos n) x <| λ e → transp (λ j → sucPathℤ j) e ) ⟩
-    transp (λ j → sucPathℤ j) (x + (pos n))                   ≡⟨ ElimComp 3 (sucℤ (x + pos n)) ⟩
+    transp (λ j → sucPathℤ j) (x + (pos n))                   ≡⟨ LemmaSucP (x + (pos n)) ⟩
     sucℤ (x + pos n) ∎
 
   LemmaIP (negsuc (suc n)) x = begin
-    transp (λ j → trans sucPathℤ (trans sucPathℤ (nPathℤ n)) (~ j)) x ≡⟨ transpOfTransRev sucPathℤ (trans sucPathℤ (nPathℤ n)) ⟩
+    transp (λ j → trans sucPathℤ (trans sucPathℤ (nPathℤ n)) (~ j)) x                  ≡⟨ transpOfTransRev sucPathℤ (trans sucPathℤ (nPathℤ n)) ⟩
     transp (λ j → sucPathℤ (~ j)) (transp (λ j → (trans sucPathℤ (nPathℤ n)) (~ j)) x) ≡⟨ (LemmaIP (negsuc n) x <| λ e → transp (λ j → sucPathℤ (~ j)) e) ⟩
     transp (λ j → sucPathℤ (~ j)) (x + negsuc n) ≡⟨
     
@@ -105,6 +146,7 @@ module Numbers2 where
     predℤ (x + negsuc n) ∎
 
   ---* Lemmas to move suc and pred around. *---
+  -- Proofs are trivial.
 
   suc+ : (a b : ℤ) → sucℤ (a + b) ≡ (sucℤ a) + b
  
@@ -137,6 +179,7 @@ module Numbers2 where
 
 
   -- Theorem: predℤ and transporting along +i can be exchanged.
+  -- Easy to prove since we know things about +.
   
   LemmaPredTranspA : (i p : ℤ) → (transp (λ j → (iPathℤ i) j) (predℤ p)) ≡ (predℤ (transp (λ j → (iPathℤ i) j) p))
   LemmaPredTranspA i p = begin
@@ -147,7 +190,7 @@ module Numbers2 where
     predℤ (transp (λ j → iPathℤ i j) p) ∎    
 
 
-  -- Theorem: predℤ and transporting along -i can be exchanged.
+  -- Theorem: predℤ and transporting along -i can thus be exchanged.
   
   LemmaPredTransp : (i p : ℤ) → (transp (λ j → (sym (iPathℤ i)) j) (predℤ p)) ≡ (predℤ (transp (λ j → (sym (iPathℤ i)) j) p))
   LemmaPredTransp i p = LemmaTranspRev {a = p} predℤ (iPathℤ i) (LemmaPredTranspA i)
@@ -155,7 +198,12 @@ module Numbers2 where
 
 
   -- A lemma that links our + to the one from the standard library.
-  -- We can this way check that + is equal what we would like it to be.
+  -- We can this way check that + is indeed equal what we would like it to be. (the + operator)
+  -- It also gives us properties for free; because we know that +d commutes, + also commutes etc...
+
+  {--
+    The idea of the proof is that we convert by induction our + in a +d as fast as possible, and then use all the +d properties to get to our goal.
+  --}
 
   sameOp : ∀ a b → a + b ≡ (a +d b)
   sameOp a (pos 0) = ((+-identityʳ a) >| λ x → sym (eqTr x))
@@ -167,21 +215,27 @@ module Numbers2 where
     (a +d (pos 1)) +d pos n                   ≡⟨ (+-assoc a (pos 1) (pos n)) >| eqTr ⟩
     a +d pos (suc n) ∎
   sameOp a (negsuc (suc n)) = begin
-    predℤ (a + negsuc n) ≡⟨ pred+ a (negsuc n) ⟩ --negsuc 0 +d a + negsuc n
+    predℤ (a + negsuc n) ≡⟨ pred+ a (negsuc n) ⟩
     predℤ a + negsuc n ≡⟨ sameOp (predℤ a) (negsuc n) ⟩
     predℤ a +d negsuc n ≡⟨ ( (sym(eqTr (+-comm a (negsuc 0))) <| λ x → x +d negsuc n )) ⟩
     a +d negsuc 0 +d negsuc n ≡⟨ (+-assoc a (negsuc 0) (negsuc n)) >| eqTr ⟩
     a +d negsuc (suc n) ∎
 
-
-  -- On top of checking that everything works, it allows us to get lemmas for free. You can see below that before i made the transition, i had to do a simple but larger induction to prove that. Now we just have to plunge ourselves in +d.
+  -- A lemma obtained for free.
   
   +-0 : (b : ℤ) → pos zero + b ≡ b
   +-0 b = (sameOp (pos zero) b) ∙ (eqTr (+-identityˡ b))
+  
 
-  -- Consequence :
+  -- Consequence : Zero becomes i after being transported along the +i path.
   whoZero : (i : ℤ) → transp (λ j → (iPathℤ i)j) (pos 0) ≡ i
   whoZero i = trans (LemmaIP i (pos 0)) (+-0 i)
+  
+-- END
+-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+
+
 
 
   ------ ------- Unused Lemmas:

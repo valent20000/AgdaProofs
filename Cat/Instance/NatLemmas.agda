@@ -19,6 +19,8 @@ module Cat.Instance.NatLemmas where
 
   open import Data.Integer.Properties
 
+  open import Agda.Builtin.Equality renaming (_≡_ to _≡b_) renaming (refl to reflb)
+
   import Cat.Instance.IntCategory as IC
 
   lemma-n : ∀ n k → negsuc (n +ℕ (suc k)) ≡ (negsuc n) + (negsuc k)
@@ -76,31 +78,29 @@ module Cat.Instance.NatLemmas where
   ineq-cmp-onpred {i} {j} p = (ineq-cmp p .fst) , (lm-recp _ _ _ (ineq-cmp p .snd))
 
   ineq-cmp-type-unicity : ∀ i j (a b : Σ[ n ∈ ℕ ] (j + pos n ≡ i)) → a .fst ≡ b .fst --Annoying but easy arithmetic...x
-  ineq-cmp-type-unicity i j a b = begin
-    a .fst ≡⟨ {!a .snd!} ⟩
-    {!!}   ≡⟨ {!!} ⟩
-    b .fst ∎
+  ineq-cmp-type-unicity i j a b = pos-inj lm2
     where
       lm : j + pos (fst a) ≡ j + pos (fst b)
       lm = a .snd ∙ sym (b .snd)
 
-      lm' : ∀ j → - j + j ≡ pos 0
-      lm' j = {!j + - j!}
-
       lm2 :  pos (fst a) ≡  pos (fst b)
       lm2 = begin
-        pos (fst a)             ≡⟨ {!!} ⟩
+        pos (fst a)             ≡⟨ ((+-inverse .fst j >| eqTr) <| \ x → x + pos (fst a)) >| sym ⟩
         (- j + j) + pos (fst a) ≡⟨ +-assoc (- j) j _ >| eqTr ⟩
         - j + (j + pos (fst a)) ≡⟨ (lm <| \ x → - j + x) ⟩
         - j + (j + pos (fst b)) ≡⟨ (+-assoc (- j) j _ >| \ x → sym (eqTr x)) ⟩
-        - j + j + pos (fst b)   ≡⟨ {!!} ⟩
+        - j + j + pos (fst b)   ≡⟨ ((+-inverse .fst j >| eqTr) <| \ x → x + pos (fst b)) ⟩
         pos (fst b) ∎ 
 
-      pos-inj : ∀ a b (e :  pos a ≡ pos b) → a ≡ b
-      pos-inj a b e = pathJ {!!} refl (pos b) e
+      f : (e : ℤ) → ℕ
+      f (pos m) = m
+      f _ = zero
+      
+      pos-inj : ∀ {a b} (e :  pos a ≡ pos b) → a ≡ b
+      pos-inj e = cong f e
 
-  ineq-cmp-type-Prop : ∀ k l → isProp (Σ[ n ∈ ℕ ] (l + pos n ≡ k)) --IC.IntCategoryM.Lemmas.isSet-ℤ
-  ineq-cmp-type-Prop k l x y j = (ineq-cmp-type-unicity k l x y j) , {!!}
+  --ineq-cmp-type-Prop : ∀ k l → isProp (Σ[ n ∈ ℕ ] (l + pos n ≡ k)) --IC.IntCategoryM.Lemmas.isSet-ℤ
+  --ineq-cmp-type-Prop k l x y j = (ineq-cmp-type-unicity k l x y j) , {!!}
 
   lemmaInf : ∀ i → predℤ i ≤ i
   lemmaInf (pos 0) = -≤+
@@ -113,7 +113,47 @@ module Cat.Instance.NatLemmas where
     pos 1 + predℤ k ≡⟨ (+-assoc (pos 1) (negsuc 0) k >| \ x → sym (eqTr x)) ⟩
     pos 0 + k       ≡⟨ +-identityˡ k >| eqTr ⟩
     k ∎))
-  
+
+  ineq-cmp-onRefl : ∀ k → ineq-cmp-onpred (≤-reflexive (reflb {x = k})) .fst ≡ 0
+  ineq-cmp-onRefl k = ineq-cmp-type-unicity k k (ineq-cmp (≤-reflexive reflb)) (0 , (+-identity .snd k >| eqTr))
+
+  predℤ-inj : ∀ a b → predℤ a ≡ predℤ b → a ≡ b
+  predℤ-inj a b e = begin
+    a                           ≡⟨ (+-identity .fst a >| \ x → sym (eqTr x)) ⟩
+    (- negsuc 0 + negsuc 0) + a ≡⟨ +-assoc (- (negsuc 0)) (negsuc 0) a >| eqTr ⟩
+    - negsuc 0 + (negsuc 0 + a) ≡⟨ (e <| \ x → - negsuc 0 + x) ⟩
+    - negsuc 0 + (negsuc 0 + b) ≡⟨ (+-assoc (- (negsuc 0)) (negsuc 0) b >| \ x → sym (eqTr x)) ⟩
+    (- negsuc 0 + negsuc 0) + b ≡⟨ +-identity .fst b >| eqTr ⟩
+    b ∎
+
+  predℤ-inf : ∀ a n → (predℤ ^ n) a ≤ a
+  predℤ-inf a zero = ≤-reflexive reflb
+  predℤ-inf a (suc n) = ≤-trans (lm ((predℤ ^ n) a)) (predℤ-inf a n)
+    where
+      lm : ∀ b → predℤ b ≤ b --Couldnt find a simple way to do that ...
+      lm (pos 0) = -≤+
+      lm (pos (suc n)) = ≤-step (≤-reflexive reflb) 
+      lm (negsuc n) = {!!}
+      
+  predℤ-^-aux : ∀ a b i → (predℤ ^ a) i ≡ (predℤ ^ b) i → a ≡ b
+  predℤ-^-aux zero zero i e = refl
+  predℤ-^-aux (suc n) (suc m) i e = (predℤ-inj ((predℤ ^ n) i) ((predℤ ^ m) i) e >| (predℤ-^-aux n m i)) <| \ x → suc x
+  predℤ-^-aux (suc n) zero i e = {!!}
+  predℤ-^-aux zero (suc m) i e = {!!}
+
+  predℤ-^ : ∀ a b c i → (predℤ ^ c) i ≡ (predℤ ^ b) ((predℤ ^ a) i) → c ≡ b +ℕ a
+  predℤ-^ a b c i e = predℤ-^-aux c (b +ℕ a) i lm
+    where
+      lm : (predℤ ^ c) i  ≡ (predℤ ^ (b +ℕ a)) i
+      lm = begin
+        (predℤ ^ c) i ≡⟨ e ⟩
+        (predℤ ^ b) ((predℤ ^ a) i) ≡⟨ ((^-+ predℤ b a >| sym) <| \ x → x i) ⟩
+        (predℤ ^ (b +ℕ a)) i ∎
+
+
+
+
+
 
 
 --   -- Maybe use +-injective; but we have a cubical equality so...

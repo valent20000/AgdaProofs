@@ -18,16 +18,12 @@ module complexes2 where
   open import Utils
 
   --- We define what a chain complex is.
-  {-- In idea :
-    Convention: (chain i) is the ith object and the ith Arrow.
-    chain : {c : Category} → ℤ → (c.Object, c.Arrow)
-    
-    With the constraint :
-      - hasZero :
-        ∃ 0 ∈ c.ArrowObject | (IsInitial 0) /\ (IsTerminal 0)
-      ie we want a pointed Category
-      - isChain:
-        ∀ i ∈ ℤ; (chain i) ∙ (chain (i+1)) = 0 (arrow)   
+  {--
+    Convention:
+      thisO is the object in position i.
+      thisA is the arrow in position i.
+    The arrows are like that: ... <- . <- . <- . <- ...
+    They go from i to (i - 1)
   --}
 
   module _ (ℓa ℓb : Level) {cat : ZeroCategory ℓa ℓb} where
@@ -40,6 +36,7 @@ module complexes2 where
         thisO : ℤ → Object
         thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
 
+        -- zeroFunc gives the zero arrow between two given object.
         isChain : (i : ℤ) → (thisA (predℤ i)) <<< (thisA i) ≡ zeroFunc (thisO i) (thisO (predℤ (predℤ i)))
 
     {--
@@ -51,11 +48,15 @@ module complexes2 where
     --}
 
 
-  -- We now assume we have a ZeroCategory
+  -- We now assume we have an ambient ZeroCategory
   
   module _ (ℓa ℓb : Level) (cat : ZeroCategory ℓa ℓb) where
 
     open ZeroCategory cat
+
+    {-- We first start with the zero chain.
+        We can do all the proofs by pattern matching since ℕ is defined as 0 and suc, and ℤ as ℕ + ℕ; zero holds a special place.
+    --}
     
     module zChain (A : Object)  where
 
@@ -65,11 +66,11 @@ module complexes2 where
 
       {-- Expanded definition of thisA :
 
-      thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
-      thisA (pos 0) = (zeroFunc A cZero)
-      thisA (pos 1) = (zeroFunc cZero A)
-      thisA (pos (suc (suc n))) = (zeroFunc cZero cZero)
-      thisA (negsuc n) = (zeroFunc cZero cZero)
+        thisA : (i : ℤ) → Arrow (thisO i) (thisO (predℤ i))
+        thisA (pos 0) = (zeroFunc A cZero)
+        thisA (pos 1) = (zeroFunc cZero A)
+        thisA (pos (suc (suc n))) = (zeroFunc cZero cZero)
+        thisA (negsuc n) = (zeroFunc cZero cZero)
 
       --}
 
@@ -78,30 +79,37 @@ module complexes2 where
       
       -- We want to proove now that the zero chain is indeed a chain.
 
-      -- Those proofs are really trivial. We just say that both members are equal to a canonical element of their type.
-      -- (In maths we would say that they are 'equal' because there is unicty up to isomorphism)
-      -- We just have to look at every case. But it's simple because here we are at 0 who as a special place in ℤ
-      -- We don't have to consider j = i, j = i + 2, j < i etc... Wich would make things extremely complicated. 
-
+      {-- Those proofs are really trivial. We just say that both members of the equality are equal to a 'canonical' element of their type.
+          We just have to look at every case. But it's simple because here we are at 0 who as a special place in ℤ
+          We don't have to consider j = i, j = i + 2, j < i etc... Wich would make things extremely complicated. 
+      --}
+      
       --First we prove the result for 0 → 0
-      -- Note that using proofTerm or proofInit both works...
+      -- That is, every two arrows between 0 and 0 are equal (because it's a zero element)
+      -- Note that using proofTerm or proofInit (stating that 0 is terminal/initial) both works...
       
       ProofZ : (A : Arrow cZero cZero) → A ≡ zeroFunc cZero cZero
       ProofZ A = begin
         A ≡⟨ sym (proofTerm A) ⟩
         fst (snd (snd hasZero)) ≡⟨ proofTerm (zeroFunc cZero cZero) ⟩
         zeroFunc cZero cZero ∎
+
+      {-- The fundamental idea is that because of the unicty given by the initiality / terminality (there exist a unique element such that ...); we can equate
+          everything to a 'canonical' element (the one given by the existence). Thus the proof is really easy.
+
+          We just have to consider the cases where A is involed separatly.
+      --}
        
       isChain0 : (i : ℤ) → (thisA (predℤ i)) <<< (thisA i) ≡ zeroFunc (thisO i) (thisO (predℤ (predℤ i)))
       
       isChain0 (pos 0) = begin
         thisA (negsuc 0) <<< thisA (pos 0) ≡⟨ sym (proofTerm ((thisA (predℤ (pos 0))) <<< (thisA (pos 0)))) ⟩
-        fst (snd (snd hasZero)) ≡⟨  proofTerm (zeroFunc A cZero)  ⟩
+        fst (snd (snd hasZero))            ≡⟨  proofTerm (zeroFunc A cZero)  ⟩
         zeroFunc A cZero ∎
         
       isChain0 (pos 2) = begin
          thisA (pos 1) <<< thisA (pos 2) ≡⟨ sym (proofInit (thisA (pos 1) <<< thisA (pos 2))) ⟩
-         fst (fst (snd hasZero)) ≡⟨ proofInit (zeroFunc cZero A) ⟩
+         fst (fst (snd hasZero))         ≡⟨ proofInit (zeroFunc cZero A) ⟩
          zeroFunc cZero A ∎
 
       -- Chains between zeros.      
@@ -136,13 +144,6 @@ module complexes2 where
            (i : Z) → (thisA (predZ i)) <<< (thisA i)
                    ≡ zeroFunc (thisO i) (thisO (predZ (predZ i))))))
 
-
---       sucPathℤ : Int ≡ Int
---       sucPathℤ = equivToPath suc-equiv
---       where
---       suc-equiv : Σ _ (isEquiv Int Int)
---       suc-equiv .fst = sucℤ
---       suc-equiv .snd = gradLemma sucℤ predℤ sucPred predSuc
 
       pathComplex : ChainComplex ℓa ℓb {cat = cat} ≡ ChainComplex ℓa ℓb {cat = cat}
       pathComplex = begin
@@ -188,15 +189,19 @@ module complexes2 where
            predℤ x ∎ ))
 
 
+      -- THEOREM : the i-chain is a Chain Complex.
+      baseChain' : ChainComplex ℓa ℓb
       baseChain' = transp (\ i → pathComplex i) zeroChain
 
+
+      -- We can extract the objects and arrows.
       thisOi : (x : ℤ) → Object
       thisOi = \ x → (baseChain' .ChainComplex.thisO x)
 
       thisAi : (x : ℤ) → Arrow (ChainComplex.thisO baseChain' x) (ChainComplex.thisO baseChain' (predℤ x))
       thisAi = \ x → (baseChain' .ChainComplex.thisA x)
 
-      -- Verifications;
+      -- Verifications; We can check that it gave us what we expected it to be.
 
       simpl : ∀ x → (thisOi x) ≡ (thisO (-i x))
       simpl x = begin
@@ -204,9 +209,6 @@ module complexes2 where
         (thisO ((empCmp ^ 6) (-i ((empCmp ^ 10) x)))) ≡⟨ (ElimCompL 6 ((-i ((empCmp ^ 10) x))) <| \ e → thisO e) ⟩
         thisO (-i ((empCmp ^ 10) x)) ≡⟨ (ElimCompL 10 x <| \ e → thisO ( -i e )) ⟩
         (thisO (-i x)) ∎
-
-
-      --simpl2 : ∀ x → (thisAi x) ≡ (zeroFunc (thisOi x) (thisOi (predℤ x)))
 
       correction :  ∀ z → (thisOi (z + i)) ≡ (thisO z)
       correction z = begin
@@ -233,3 +235,12 @@ module complexes2 where
         thisOi ((negsuc n) + i) ≡⟨ correction (negsuc n) ⟩
         thisO (negsuc n) ≡⟨⟩
         cZero ∎
+
+      {-- This would be really interesting to prove:
+          simpl2 : ∀ x → (thisAi x) ≡ (zeroFunc (thisOi x) (thisOi (predℤ x)))
+
+          Unfortunately; we are reaching here one of the limitation of Ctt. (Note that still, the naive proof works though)
+          If you check the normal form, it's so huge (unexpectedly for such a little proof!) that it's a good example of things that we cannot work with in practice (or at least with a lot of difficulties).
+
+          Hopefully, people are working on that.
+      --}
